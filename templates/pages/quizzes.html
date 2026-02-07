@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-6 py-8">
+    <!-- Header -->
+    <div class="text-center mb-12">
+        <span class="text-5xl mb-4 block">📝</span>
+        <h1 class="text-3xl font-bold text-white mb-2">Knowledge Quizzes</h1>
+        <p class="text-slate-400 max-w-2xl mx-auto">
+            Test your understanding of AI concepts with these interactive quizzes. 
+            Track your progress and identify areas for improvement.
+        </p>
+    </div>
+    
+    <!-- Progress Overview -->
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 mb-8" 
+         x-data="{ 
+            completedCount: 0,
+            totalQuizzes: {{ quizzes|length }},
+            init() {
+                {% for quiz in quizzes %}
+                if (localStorage.getItem('quiz_score_{{ quiz.id }}')) this.completedCount++;
+                {% endfor %}
+            }
+         }">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-semibold text-white mb-1">Your Progress</h3>
+                <p class="text-slate-400 text-sm">
+                    <span x-text="completedCount"></span> of <span x-text="totalQuizzes"></span> quizzes completed
+                </p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-primary-400" x-text="Math.round((completedCount / totalQuizzes) * 100) + '%'"></div>
+                    <div class="text-xs text-slate-500">Complete</div>
+                </div>
+                <div class="w-32 h-3 bg-slate-700 rounded-full overflow-hidden">
+                    <div class="h-full bg-primary-500 rounded-full transition-all duration-500"
+                         :style="'width: ' + (completedCount / totalQuizzes * 100) + '%'"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filter Tabs -->
+    <div x-data="{ filter: 'all' }" class="mb-8">
+        <div class="flex items-center space-x-4 mb-8 flex-wrap gap-y-2">
+            <button @click="filter = 'all'" 
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    :class="filter === 'all' ? 'bg-primary-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'">
+                All Quizzes
+            </button>
+            <button @click="filter = 'fundamentals'" 
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    :class="filter === 'fundamentals' ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'">
+                Fundamentals
+            </button>
+            <button @click="filter = 'intermediate'" 
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    :class="filter === 'intermediate' ? 'bg-yellow-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'">
+                Intermediate
+            </button>
+            <button @click="filter = 'advanced'" 
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    :class="filter === 'advanced' ? 'bg-orange-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'">
+                Advanced
+            </button>
+        </div>
+    
+        <!-- Quizzes Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for quiz in quizzes %}
+            <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden hover:border-primary-500/50 transition-colors group"
+                 x-data="{ 
+                    score: localStorage.getItem('quiz_score_{{ quiz.id }}'),
+                    passed: parseInt(localStorage.getItem('quiz_score_{{ quiz.id }}') || 0) >= 70
+                 }"
+                 x-show="filter === 'all' || filter === '{{ quiz.category }}'">
+                <!-- Quiz Header -->
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-3xl">{{ quiz.icon }}</span>
+                        <div class="flex items-center space-x-2">
+                            <template x-if="score">
+                                <span class="px-2 py-1 text-xs rounded"
+                                      :class="passed ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'">
+                                    <span x-text="score + '%'"></span>
+                                </span>
+                            </template>
+                            <span class="px-2 py-1 rounded text-xs
+                                {% if quiz.category == 'fundamentals' %}bg-blue-500/20 text-blue-400
+                                {% elif quiz.category == 'intermediate' %}bg-yellow-500/20 text-yellow-400
+                                {% else %}bg-orange-500/20 text-orange-400{% endif %}">
+                                {{ quiz.category|capitalize }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-lg font-semibold text-white group-hover:text-primary-400 transition-colors mb-2">
+                        {{ quiz.title }}
+                    </h3>
+                    <p class="text-slate-400 text-sm mb-4">{{ quiz.description }}</p>
+                    
+                    <div class="flex items-center justify-between text-sm text-slate-500 mb-4">
+                        <span>❓ {{ quiz.question_count }} questions</span>
+                        <span>⏱️ {{ quiz.time_estimate }} min</span>
+                    </div>
+                    
+                    <!-- Topics Covered -->
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        {% for topic in quiz.topics %}
+                        <span class="px-2 py-1 bg-slate-700 text-slate-300 text-xs rounded">{{ topic }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Quiz Footer -->
+                <div class="px-6 py-4 bg-slate-900/50 border-t border-slate-700">
+                    <a href="/quiz/{{ quiz.id }}" 
+                       class="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-medium transition-colors">
+                        <span x-text="score ? 'Retake Quiz' : 'Start Quiz'"></span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Quiz Tips -->
+    <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mt-8">
+        <h3 class="text-lg font-semibold text-white mb-4">📚 Quiz Tips</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="flex space-x-3">
+                <span class="text-2xl">🎯</span>
+                <div>
+                    <h4 class="font-medium text-white mb-1">Passing Score</h4>
+                    <p class="text-sm text-slate-400">You need 70% or higher to pass each quiz.</p>
+                </div>
+            </div>
+            <div class="flex space-x-3">
+                <span class="text-2xl">🔄</span>
+                <div>
+                    <h4 class="font-medium text-white mb-1">Unlimited Retakes</h4>
+                    <p class="text-sm text-slate-400">Retake any quiz to improve your score.</p>
+                </div>
+            </div>
+            <div class="flex space-x-3">
+                <span class="text-2xl">💾</span>
+                <div>
+                    <h4 class="font-medium text-white mb-1">Progress Saved</h4>
+                    <p class="text-sm text-slate-400">Your scores are saved locally in your browser.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

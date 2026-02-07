@@ -1,0 +1,101 @@
+/* AI Engineering Tutorial - Custom Styles */
+
+/* These styles complement TailwindCSS */
+
+/* Code block enhancements */
+.code-block {
+    position: relative;
+}
+
+.code-block .copy-button {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.code-block:hover .copy-button {
+    opacity: 1;
+}
+
+/* Lab runner styles */
+.lab-runner {
+    border: 1px solid #334155;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.lab-runner .editor {
+    min-height: 200px;
+    font-family: 'Fira Code', 'Monaco', monospace;
+}
+
+.lab-runner .output {
+    background: #0f172a;
+    border-top: 1px solid #334155;
+    padding: 1rem;
+    min-height: 100px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Progress animations */
+@keyframes progress-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.progress-active {
+    animation: progress-pulse 2s infinite;
+}
+
+/* Concept link hover effect */
+.concept-link {
+    position: relative;
+    border-bottom: 1px dashed currentColor;
+}
+
+.concept-link:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    border: 1px solid #334155;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    z-index: 10;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        z-index: 50;
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.open {
+        transform: translateX(0);
+    }
+}
+
+/* Print styles */
+@media print {
+    .sidebar, header, .no-print {
+        display: none !important;
+    }
+    
+    main {
+        margin: 0 !important;
+        padding: 2rem !important;
+    }
+    
+    .prose {
+        max-width: none !important;
+    }
+}

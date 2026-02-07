@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block head %}
+<script src="/static/js/quiz-engine.js"></script>
+<style>
+    .quiz-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .quiz-option {
+        user-select: none;
+    }
+    
+    .quiz-option:hover:not(.answered) {
+        transform: translateX(4px);
+    }
+    
+    .ordering-item {
+        user-select: none;
+    }
+    
+    .ordering-item:active {
+        opacity: 0.8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="p-6">
+    <!-- Quiz Header -->
+    <div class="max-w-4xl mx-auto mb-8">
+        <div class="flex items-center gap-4 mb-4">
+            <a href="javascript:history.back()" class="text-slate-400 hover:text-white">
+                ← Back
+            </a>
+        </div>
+        
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-white flex items-center gap-3">
+                    <span>📝</span>
+                    {{ quiz_title | default('Knowledge Check') }}
+                </h1>
+                <p class="text-slate-400 mt-1">{{ quiz_description | default('Test your understanding of the concepts') }}</p>
+            </div>
+            <div class="text-right">
+                <div class="text-sm text-slate-400">
+                    <span>{{ question_count | default(5) }} questions</span>
+                    <span class="mx-2">•</span>
+                    <span>{{ time_estimate | default('5-10') }} min</span>
+                </div>
+                <div class="text-sm text-slate-500 mt-1">
+                    Passing score: {{ passing_score | default(70) }}%
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quiz Container -->
+    <div id="quiz-container" class="max-w-4xl mx-auto">
+        <!-- Quiz will be rendered here by JavaScript -->
+        <div class="text-center py-12">
+            <div class="animate-pulse">
+                <div class="text-4xl mb-4">📝</div>
+                <p class="text-slate-400">Loading quiz...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize quiz
+let quiz;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Get quiz data from page or use default
+    const quizType = '{{ quiz_type | default("llmBasics") }}';
+    const quizId = '{{ quiz_id | default("default") }}';
+    const passingScore = {{ passing_score | default(70) }};
+    
+    // Custom questions passed from server (if any)
+    const customQuestions = {{ quiz_questions | default('null') | safe }};
+    
+    // Initialize quiz engine
+    quiz = new QuizEngine('quiz-container', {
+        quizId: quizId,
+        passingScore: passingScore,
+        showFeedback: true,
+        allowRetry: true,
+        shuffleQuestions: {{ shuffle_questions | default('false') | safe }},
+        shuffleAnswers: {{ shuffle_answers | default('true') | safe }}
+    });
+    
+    // Load questions - either custom or from QuizData
+    const questions = customQuestions || QuizData[quizType] || QuizData.llmBasics;
+    quiz.loadQuestions(questions);
+    quiz.render();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-6 py-8">
+    <!-- Header -->
+    <div class="text-center mb-12">
+        <span class="text-5xl mb-4 block">🧪</span>
+        <h1 class="text-3xl font-bold text-white mb-2">Interactive Labs</h1>
+        <p class="text-slate-400 max-w-2xl mx-auto">
+            Hands-on exercises to practice what you've learned. Each lab provides a real coding environment 
+            where you can experiment with LLMs, RAG, and more.
+        </p>
+    </div>
+    
+    <!-- Provider Check -->
+    <div class="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-8" x-data="{ hasKey: false }" x-init="hasKey = localStorage.getItem('openai_key') || localStorage.getItem('anthropic_key') || localStorage.getItem('google_key') || localStorage.getItem('xai_key')">
+        <div x-show="!hasKey" class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <span>⚠️</span>
+                <div>
+                    <div class="font-medium text-amber-400">API Key Required</div>
+                    <div class="text-sm text-slate-300">Configure at least one LLM provider to run the labs.</div>
+                </div>
+            </div>
+            <a href="/settings" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors">
+                Configure Keys
+            </a>
+        </div>
+        <div x-show="hasKey" class="flex items-center space-x-3 text-green-400">
+            <span>✓</span>
+            <span>API keys configured. You're ready to run labs!</span>
+        </div>
+    </div>
+    
+    <!-- Filter and Labs Container -->
+    <div x-data="{ filter: 'all' }">
+        <!-- Filter Tabs -->
+        <div class="flex items-center space-x-4 mb-8 flex-wrap gap-y-2">
+            <button @click="filter = 'all'" 
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    :class="filter === 'all' ? 'bg-primary-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'">
+                All Labs
+            </button>
+            <button @click="filter = 'beginner'" 
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    :class="filter === 'beginner' ? 'bg-green-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'">
+                Beginner
+            </button>
+            <button @click="filter = 'intermediate'" 
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    :class="filter === 'intermediate' ? 'bg-yellow-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'">
+                Intermediate
+            </button>
+            <button @click="filter = 'advanced'" 
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    :class="filter === 'advanced' ? 'bg-orange-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'">
+                Advanced
+            </button>
+            <button @click="filter = 'expert'" 
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    :class="filter === 'expert' ? 'bg-red-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'">
+                Expert
+            </button>
+        </div>
+    
+        <!-- Labs Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% if all_labs %}
+            {% for lab in all_labs %}
+            <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden hover:border-amber-500/50 transition-colors group"
+                 x-data="{ completed: localStorage.getItem('completed_{{ lab.id }}') === 'true' }"
+                 x-show="filter === 'all' || filter === '{{ lab.difficulty.value }}'">
+                <!-- Lab Header -->
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-3xl">🧪</span>
+                        <div class="flex items-center space-x-2">
+                            <span x-show="completed" class="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded">Completed</span>
+                        <span class="px-2 py-1 rounded text-xs
+                            {% if lab.difficulty.value == 'beginner' %}bg-green-500/20 text-green-400
+                            {% elif lab.difficulty.value == 'intermediate' %}bg-yellow-500/20 text-yellow-400
+                            {% elif lab.difficulty.value == 'advanced' %}bg-orange-500/20 text-orange-400
+                            {% else %}bg-red-500/20 text-red-400{% endif %}">
+                            {{ lab.difficulty.value|capitalize }}
+                        </span>
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-semibold text-white group-hover:text-amber-400 transition-colors mb-2">
+                    {{ lab.title }}
+                </h3>
+                <p class="text-slate-400 text-sm mb-4">{{ lab.description }}</p>
+                
+                <div class="flex items-center justify-between text-sm text-slate-500">
+                    <span>⏱️ {{ lab.estimated_time }} min</span>
+                    {% if lab.provider_required %}
+                    <span class="flex items-center space-x-1">
+                        <span>🔑</span>
+                        <span>API Required</span>
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Lab Footer -->
+            <div class="px-6 py-4 bg-slate-700/30 border-t border-slate-700">
+                <a href="/lab/{{ lab.id }}" 
+                   class="block w-full text-center py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition-colors">
+                    <span x-show="!completed">Start Lab</span>
+                    <span x-show="completed">Review Lab</span>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <!-- Placeholder labs when none defined -->
+        {% for lab in [
+            {"id": "first-api-call", "title": "Your First LLM API Call", "description": "Make your first API call to an LLM provider", "time": 10, "difficulty": "beginner"},
+            {"id": "prompt-playground", "title": "Prompt Engineering Playground", "description": "Experiment with different prompting techniques", "time": 20, "difficulty": "beginner"},
+            {"id": "compare-providers", "title": "Compare LLM Providers", "description": "See how different models respond to the same prompt", "time": 15, "difficulty": "intermediate"},
+            {"id": "build-rag", "title": "Build a RAG Pipeline", "description": "Create a retrieval-augmented generation system", "time": 30, "difficulty": "intermediate"},
+            {"id": "embedding-viz", "title": "Embedding Visualization", "description": "Visualize text embeddings in 2D/3D space", "time": 20, "difficulty": "intermediate"},
+            {"id": "agent-loop", "title": "Build an Agent Loop", "description": "Create an autonomous AI agent with tool use", "time": 45, "difficulty": "advanced"}
+        ] %}
+        <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden hover:border-amber-500/50 transition-colors group"
+             x-data="{ completed: localStorage.getItem('completed_{{ lab.id }}') === 'true' }"
+             x-show="filter === 'all' || filter === '{{ lab.difficulty }}'">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-3xl">🧪</span>
+                    <div class="flex items-center space-x-2">
+                        <span x-show="completed" class="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded">Completed</span>
+                        <span class="px-2 py-1 rounded text-xs
+                            {% if lab.difficulty == 'beginner' %}bg-green-500/20 text-green-400
+                            {% elif lab.difficulty == 'intermediate' %}bg-yellow-500/20 text-yellow-400
+                            {% elif lab.difficulty == 'advanced' %}bg-orange-500/20 text-orange-400
+                            {% else %}bg-red-500/20 text-red-400{% endif %}">
+                            {{ lab.difficulty|capitalize }}
+                        </span>
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-semibold text-white group-hover:text-amber-400 transition-colors mb-2">
+                    {{ lab.title }}
+                </h3>
+                <p class="text-slate-400 text-sm mb-4">{{ lab.description }}</p>
+                
+                <div class="flex items-center justify-between text-sm text-slate-500">
+                    <span>⏱️ {{ lab.time }} min</span>
+                    <span class="flex items-center space-x-1">
+                        <span>🔑</span>
+                        <span>API Required</span>
+                    </span>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 bg-slate-700/30 border-t border-slate-700">
+                <a href="/lab/{{ lab.id }}" 
+                   class="block w-full text-center py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition-colors">
+                    <span x-show="!completed">Start Lab</span>
+                    <span x-show="completed">Review Lab</span>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

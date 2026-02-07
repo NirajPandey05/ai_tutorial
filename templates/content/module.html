@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-6 py-8">
+    <!-- Module Header -->
+    <div class="mb-8">
+        <div class="flex items-center space-x-4 mb-4">
+            <span class="text-5xl">{{ module.icon }}</span>
+            <div>
+                <h1 class="text-3xl font-bold text-white">{{ module.title }}</h1>
+                <p class="text-slate-400 mt-1">{{ module.description }}</p>
+            </div>
+        </div>
+        
+        <!-- Module Stats -->
+        <div class="flex items-center space-x-6 mt-4 text-sm text-slate-400">
+            <div class="flex items-center space-x-2">
+                <span>📚</span>
+                <span>{{ module.sections|length }} sections</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span>⏱️</span>
+                <span>{{ module.total_time }} min estimated</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="px-2 py-1 rounded text-xs font-medium
+                    {% if module.difficulty.value == 'beginner' %}bg-green-500/20 text-green-400
+                    {% elif module.difficulty.value == 'intermediate' %}bg-yellow-500/20 text-yellow-400
+                    {% elif module.difficulty.value == 'advanced' %}bg-orange-500/20 text-orange-400
+                    {% else %}bg-red-500/20 text-red-400{% endif %}">
+                    {{ module.difficulty.value|capitalize }}
+                </span>
+            </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="mt-6" x-data="{ progress: 0 }" x-init="progress = localStorage.getItem('progress_{{ module.id }}') || 0">
+            <div class="flex items-center justify-between text-sm mb-2">
+                <span class="text-slate-400">Your Progress</span>
+                <span class="text-white" x-text="progress + '%'">0%</span>
+            </div>
+            <div class="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+                <div class="h-full bg-primary-500 transition-all duration-500" :style="'width: ' + progress + '%'"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Prerequisites -->
+    {% if module.prerequisites %}
+    <div class="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-8">
+        <div class="flex items-center space-x-2 text-amber-400 mb-2">
+            <span>⚠️</span>
+            <span class="font-semibold">Prerequisites</span>
+        </div>
+        <p class="text-slate-300 text-sm">
+            Before starting this module, we recommend completing:
+            <span class="text-amber-300">{{ module.prerequisites|join(', ') }}</span>
+        </p>
+    </div>
+    {% endif %}
+    
+    <!-- Sections Grid -->
+    <div class="space-y-4">
+        <h2 class="text-xl font-semibold text-white mb-4">Sections</h2>
+        
+        {% for section in module.sections %}
+        <div class="bg-slate-800 border border-slate-700 rounded-lg p-6 hover:border-primary-500/50 transition-colors">
+            <div class="flex items-start justify-between">
+                <div class="flex items-start space-x-4">
+                    <span class="text-3xl">{{ section.icon }}</span>
+                    <div>
+                        <a href="/learn/{{ module.id }}/{{ section.id }}" class="text-xl font-semibold text-white hover:text-primary-400 transition-colors">
+                            {{ section.title }}
+                        </a>
+                        <p class="text-slate-400 mt-1">{{ section.description }}</p>
+                        
+                        <!-- Section Content Summary -->
+                        <div class="flex items-center space-x-4 mt-3 text-sm text-slate-500">
+                            {% if section.pages %}
+                            <span>📖 {{ section.pages|length }} lessons</span>
+                            {% endif %}
+                            {% if section.labs %}
+                            <span>🧪 {{ section.labs|length }} labs</span>
+                            {% endif %}
+                            {% if section.quizzes %}
+                            <span>📝 {{ section.quizzes|length }} quiz</span>
+                            {% endif %}
+                            <span>⏱️ {{ section.total_time }} min</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Start Button -->
+                <a href="/learn/{{ module.id }}/{{ section.id }}" 
+                   class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg font-medium transition-colors">
+                    Start
+                </a>
+            </div>
+            
+            <!-- Content Preview -->
+            <div class="mt-4 ml-12 pl-4 border-l border-slate-700">
+                {% for page in section.pages[:3] %}
+                <a href="/learn/{{ module.id }}/{{ section.id }}/{{ page.id }}" 
+                   class="block py-1 text-sm text-slate-400 hover:text-white transition-colors">
+                    {{ loop.index }}. {{ page.title }}
+                    <span class="text-slate-600">· {{ page.estimated_time }} min</span>
+                </a>
+                {% endfor %}
+                {% if section.pages|length > 3 %}
+                <span class="text-sm text-slate-500">+ {{ section.pages|length - 3 }} more...</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Related Modules -->
+    <div class="mt-12">
+        <h2 class="text-xl font-semibold text-white mb-4">What's Next?</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for next_module in all_modules %}
+            {% if next_module.order == module.order + 1 %}
+            <a href="/learn/{{ next_module.id }}" 
+               class="bg-slate-800 border border-slate-700 rounded-lg p-4 hover:border-primary-500/50 transition-colors group">
+                <div class="flex items-center space-x-3">
+                    <span class="text-2xl">{{ next_module.icon }}</span>
+                    <div>
+                        <div class="text-white font-medium group-hover:text-primary-400 transition-colors">
+                            {{ next_module.title }}
+                        </div>
+                        <div class="text-sm text-slate-400">{{ next_module.description|truncate(60) }}</div>
+                    </div>
+                </div>
+            </a>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

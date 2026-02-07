@@ -1,0 +1,823 @@
+{% extends "base.html" %}
+
+{% block title %}Decision Guides - AI Engineering Tutorial{% endblock %}
+
+{% block head %}
+<style>
+    .decision-node {
+        transition: all 0.3s ease;
+    }
+    .decision-node:hover {
+        transform: scale(1.02);
+    }
+    .flow-line {
+        stroke-dasharray: 5;
+        animation: flow 1s linear infinite;
+    }
+    @keyframes flow {
+        to { stroke-dashoffset: -10; }
+    }
+    .recommendation-card {
+        background: linear-gradient(135deg, rgba(14, 165, 233, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-6 py-12">
+    <!-- Header -->
+    <div class="mb-12">
+        <h1 class="text-3xl font-bold mb-3">🧭 Decision Guides</h1>
+        <p class="text-slate-400 text-lg">Interactive decision trees to help you choose the right approach for your AI project.</p>
+    </div>
+    
+    <!-- Decision Guide Cards -->
+    <div class="grid lg:grid-cols-2 gap-8 mb-12">
+        
+        <!-- Guide 1: RAG vs Fine-tuning vs Prompting -->
+        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-500/20 to-purple-500/20 p-6 border-b border-slate-700">
+                <h2 class="text-xl font-bold mb-2">RAG vs Fine-tuning vs Prompting</h2>
+                <p class="text-slate-400 text-sm">Choose the right approach for your knowledge needs</p>
+            </div>
+            
+            <div class="p-6" x-data="ragDecisionGuide()">
+                <!-- Question Flow -->
+                <div class="space-y-4">
+                    <!-- Question 1 -->
+                    <div x-show="step === 1" class="decision-node">
+                        <p class="font-semibold mb-3">Does your data change frequently?</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button @click="answer(1, 'yes')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">📅</span>
+                                <span class="text-sm">Yes, weekly or more</span>
+                            </button>
+                            <button @click="answer(1, 'no')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">📌</span>
+                                <span class="text-sm">No, mostly static</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Question 2 -->
+                    <div x-show="step === 2" class="decision-node">
+                        <p class="font-semibold mb-3">How much domain-specific data do you have?</p>
+                        <div class="grid grid-cols-3 gap-3">
+                            <button @click="answer(2, 'little')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">📄</span>
+                                <span class="text-sm">&lt;100 docs</span>
+                            </button>
+                            <button @click="answer(2, 'medium')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">📚</span>
+                                <span class="text-sm">100-10K docs</span>
+                            </button>
+                            <button @click="answer(2, 'lots')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">🏢</span>
+                                <span class="text-sm">10K+ docs</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Question 3 -->
+                    <div x-show="step === 3" class="decision-node">
+                        <p class="font-semibold mb-3">Do you need source citations?</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button @click="answer(3, 'yes')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">📎</span>
+                                <span class="text-sm">Yes, citations required</span>
+                            </button>
+                            <button @click="answer(3, 'no')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">💭</span>
+                                <span class="text-sm">No, just accurate answers</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Question 4 -->
+                    <div x-show="step === 4" class="decision-node">
+                        <p class="font-semibold mb-3">What's your budget for infrastructure?</p>
+                        <div class="grid grid-cols-3 gap-3">
+                            <button @click="answer(4, 'low')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">💵</span>
+                                <span class="text-sm">Minimal</span>
+                            </button>
+                            <button @click="answer(4, 'medium')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">💰</span>
+                                <span class="text-sm">Moderate</span>
+                            </button>
+                            <button @click="answer(4, 'high')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">🏦</span>
+                                <span class="text-sm">Flexible</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Result -->
+                    <div x-show="step === 'result'" class="recommendation-card rounded-xl p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-4xl" x-text="result.icon"></span>
+                            <div>
+                                <h3 class="text-xl font-bold" x-text="result.title"></h3>
+                                <p class="text-slate-400 text-sm" x-text="result.subtitle"></p>
+                            </div>
+                        </div>
+                        <p class="text-slate-300 mb-4" x-text="result.description"></p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <template x-for="pro in result.pros">
+                                <span class="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs" x-text="'✓ ' + pro"></span>
+                            </template>
+                        </div>
+                        <a :href="result.learnMore" class="text-primary-400 hover:text-primary-300 text-sm">
+                            Learn more about <span x-text="result.title"></span> →
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Progress & Reset -->
+                <div class="mt-6 flex items-center justify-between">
+                    <div class="flex gap-1">
+                        <template x-for="i in 4">
+                            <div class="w-8 h-1 rounded" :class="i <= currentProgress ? 'bg-primary-500' : 'bg-slate-700'"></div>
+                        </template>
+                    </div>
+                    <button x-show="step !== 1" @click="reset()" class="text-sm text-slate-400 hover:text-white">
+                        ↺ Start Over
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Guide 2: Which LLM Provider -->
+        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+            <div class="bg-gradient-to-r from-green-500/20 to-emerald-500/20 p-6 border-b border-slate-700">
+                <h2 class="text-xl font-bold mb-2">Which LLM Provider?</h2>
+                <p class="text-slate-400 text-sm">Find the best provider for your use case</p>
+            </div>
+            
+            <div class="p-6" x-data="llmProviderGuide()">
+                <!-- Question Flow -->
+                <div class="space-y-4">
+                    <!-- Question 1 -->
+                    <div x-show="step === 1" class="decision-node">
+                        <p class="font-semibold mb-3">What's your primary use case?</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button @click="answer(1, 'chat')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">💬</span>
+                                <span class="text-sm">Chat/Assistant</span>
+                            </button>
+                            <button @click="answer(1, 'code')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">👨‍💻</span>
+                                <span class="text-sm">Code Generation</span>
+                            </button>
+                            <button @click="answer(1, 'analysis')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">📊</span>
+                                <span class="text-sm">Data Analysis</span>
+                            </button>
+                            <button @click="answer(1, 'creative')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">🎨</span>
+                                <span class="text-sm">Creative Writing</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Question 2 -->
+                    <div x-show="step === 2" class="decision-node">
+                        <p class="font-semibold mb-3">What's your cost priority?</p>
+                        <div class="grid grid-cols-3 gap-3">
+                            <button @click="answer(2, 'cheap')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">💵</span>
+                                <span class="text-sm">Lowest cost</span>
+                            </button>
+                            <button @click="answer(2, 'balanced')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">⚖️</span>
+                                <span class="text-sm">Balanced</span>
+                            </button>
+                            <button @click="answer(2, 'quality')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">🏆</span>
+                                <span class="text-sm">Best quality</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Question 3 -->
+                    <div x-show="step === 3" class="decision-node">
+                        <p class="font-semibold mb-3">Do you need multimodal (vision/audio)?</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button @click="answer(3, 'yes')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">🖼️</span>
+                                <span class="text-sm">Yes, images/audio</span>
+                            </button>
+                            <button @click="answer(3, 'no')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">📝</span>
+                                <span class="text-sm">No, text only</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Question 4 -->
+                    <div x-show="step === 4" class="decision-node">
+                        <p class="font-semibold mb-3">Data privacy requirements?</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button @click="answer(4, 'strict')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">🔒</span>
+                                <span class="text-sm">Strict / On-premise</span>
+                            </button>
+                            <button @click="answer(4, 'standard')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">☁️</span>
+                                <span class="text-sm">Cloud API is fine</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Result -->
+                    <div x-show="step === 'result'" class="recommendation-card rounded-xl p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-4xl" x-text="result.icon"></span>
+                            <div>
+                                <h3 class="text-xl font-bold" x-text="result.title"></h3>
+                                <p class="text-slate-400 text-sm" x-text="result.subtitle"></p>
+                            </div>
+                        </div>
+                        <p class="text-slate-300 mb-4" x-text="result.description"></p>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <p class="text-xs text-slate-500 mb-1">Best Model</p>
+                                <p class="font-semibold" x-text="result.bestModel"></p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 mb-1">Approx. Cost</p>
+                                <p class="font-semibold" x-text="result.cost"></p>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <template x-for="alt in result.alternatives">
+                                <span class="px-2 py-1 bg-slate-700 rounded text-xs" x-text="'Also consider: ' + alt"></span>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Progress & Reset -->
+                <div class="mt-6 flex items-center justify-between">
+                    <div class="flex gap-1">
+                        <template x-for="i in 4">
+                            <div class="w-8 h-1 rounded" :class="i <= currentProgress ? 'bg-green-500' : 'bg-slate-700'"></div>
+                        </template>
+                    </div>
+                    <button x-show="step !== 1" @click="reset()" class="text-sm text-slate-400 hover:text-white">
+                        ↺ Start Over
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Guide 3: Vector Database Selection -->
+        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+            <div class="bg-gradient-to-r from-orange-500/20 to-amber-500/20 p-6 border-b border-slate-700">
+                <h2 class="text-xl font-bold mb-2">Vector Database Comparison</h2>
+                <p class="text-slate-400 text-sm">Choose the right vector DB for your scale</p>
+            </div>
+            
+            <div class="p-6" x-data="vectorDbGuide()">
+                <!-- Question Flow -->
+                <div class="space-y-4">
+                    <!-- Question 1 -->
+                    <div x-show="step === 1" class="decision-node">
+                        <p class="font-semibold mb-3">How many vectors will you store?</p>
+                        <div class="grid grid-cols-3 gap-3">
+                            <button @click="answer(1, 'small')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">📄</span>
+                                <span class="text-sm">&lt;100K</span>
+                            </button>
+                            <button @click="answer(1, 'medium')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">📚</span>
+                                <span class="text-sm">100K-10M</span>
+                            </button>
+                            <button @click="answer(1, 'large')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">🏢</span>
+                                <span class="text-sm">10M+</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Question 2 -->
+                    <div x-show="step === 2" class="decision-node">
+                        <p class="font-semibold mb-3">Deployment preference?</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button @click="answer(2, 'managed')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">☁️</span>
+                                <span class="text-sm">Managed/Serverless</span>
+                            </button>
+                            <button @click="answer(2, 'selfhost')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">🖥️</span>
+                                <span class="text-sm">Self-hosted</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Question 3 -->
+                    <div x-show="step === 3" class="decision-node">
+                        <p class="font-semibold mb-3">Do you need filtering/metadata?</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button @click="answer(3, 'yes')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">🏷️</span>
+                                <span class="text-sm">Yes, complex filters</span>
+                            </button>
+                            <button @click="answer(3, 'no')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">🔍</span>
+                                <span class="text-sm">Basic similarity only</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Result -->
+                    <div x-show="step === 'result'" class="recommendation-card rounded-xl p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-4xl" x-text="result.icon"></span>
+                            <div>
+                                <h3 class="text-xl font-bold" x-text="result.title"></h3>
+                                <p class="text-slate-400 text-sm" x-text="result.subtitle"></p>
+                            </div>
+                        </div>
+                        <p class="text-slate-300 mb-4" x-text="result.description"></p>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <p class="text-xs text-slate-500 mb-1">Free Tier</p>
+                                <p class="font-semibold" x-text="result.freeTier"></p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 mb-1">Best For</p>
+                                <p class="font-semibold" x-text="result.bestFor"></p>
+                            </div>
+                        </div>
+                        <a :href="result.learnMore" class="text-primary-400 hover:text-primary-300 text-sm">
+                            Learn more about vector databases →
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Progress & Reset -->
+                <div class="mt-6 flex items-center justify-between">
+                    <div class="flex gap-1">
+                        <template x-for="i in 3">
+                            <div class="w-10 h-1 rounded" :class="i <= currentProgress ? 'bg-orange-500' : 'bg-slate-700'"></div>
+                        </template>
+                    </div>
+                    <button x-show="step !== 1" @click="reset()" class="text-sm text-slate-400 hover:text-white">
+                        ↺ Start Over
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Guide 4: Self-host vs API -->
+        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+            <div class="bg-gradient-to-r from-purple-500/20 to-pink-500/20 p-6 border-b border-slate-700">
+                <h2 class="text-xl font-bold mb-2">Self-Host vs API?</h2>
+                <p class="text-slate-400 text-sm">Decide between cloud APIs and self-hosting</p>
+            </div>
+            
+            <div class="p-6" x-data="selfHostGuide()">
+                <!-- Question Flow -->
+                <div class="space-y-4">
+                    <!-- Question 1 -->
+                    <div x-show="step === 1" class="decision-node">
+                        <p class="font-semibold mb-3">Monthly inference volume?</p>
+                        <div class="grid grid-cols-3 gap-3">
+                            <button @click="answer(1, 'low')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">📉</span>
+                                <span class="text-sm">&lt;$500/mo</span>
+                            </button>
+                            <button @click="answer(1, 'medium')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">📊</span>
+                                <span class="text-sm">$500-$5K/mo</span>
+                            </button>
+                            <button @click="answer(1, 'high')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">📈</span>
+                                <span class="text-sm">&gt;$5K/mo</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Question 2 -->
+                    <div x-show="step === 2" class="decision-node">
+                        <p class="font-semibold mb-3">Data sensitivity level?</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button @click="answer(2, 'high')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">🔐</span>
+                                <span class="text-sm">Highly sensitive (PII/HIPAA)</span>
+                            </button>
+                            <button @click="answer(2, 'low')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">🌐</span>
+                                <span class="text-sm">General business data</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Question 3 -->
+                    <div x-show="step === 3" class="decision-node">
+                        <p class="font-semibold mb-3">ML/DevOps expertise available?</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button @click="answer(3, 'yes')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">👨‍💻</span>
+                                <span class="text-sm">Yes, dedicated team</span>
+                            </button>
+                            <button @click="answer(3, 'no')" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                                <span class="text-2xl mb-1 block">🚀</span>
+                                <span class="text-sm">No, move fast</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Result -->
+                    <div x-show="step === 'result'" class="recommendation-card rounded-xl p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-4xl" x-text="result.icon"></span>
+                            <div>
+                                <h3 class="text-xl font-bold" x-text="result.title"></h3>
+                                <p class="text-slate-400 text-sm" x-text="result.subtitle"></p>
+                            </div>
+                        </div>
+                        <p class="text-slate-300 mb-4" x-text="result.description"></p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <template x-for="rec in result.recommendations">
+                                <span class="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-xs" x-text="rec"></span>
+                            </template>
+                        </div>
+                        <a :href="result.learnMore" class="text-primary-400 hover:text-primary-300 text-sm">
+                            Learn more about self-hosting →
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Progress & Reset -->
+                <div class="mt-6 flex items-center justify-between">
+                    <div class="flex gap-1">
+                        <template x-for="i in 3">
+                            <div class="w-10 h-1 rounded" :class="i <= currentProgress ? 'bg-purple-500' : 'bg-slate-700'"></div>
+                        </template>
+                    </div>
+                    <button x-show="step !== 1" @click="reset()" class="text-sm text-slate-400 hover:text-white">
+                        ↺ Start Over
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Comparison Table -->
+    <div class="bg-slate-800 rounded-xl border border-slate-700 p-8">
+        <h2 class="text-2xl font-bold mb-6">📋 Quick Reference Comparison</h2>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-slate-700">
+                        <th class="text-left py-3 px-4">Approach</th>
+                        <th class="text-center py-3 px-4">Setup Time</th>
+                        <th class="text-center py-3 px-4">Ongoing Cost</th>
+                        <th class="text-center py-3 px-4">Accuracy</th>
+                        <th class="text-center py-3 px-4">Data Privacy</th>
+                        <th class="text-left py-3 px-4">Best For</th>
+                    </tr>
+                </thead>
+                <tbody class="text-slate-300">
+                    <tr class="border-b border-slate-700/50">
+                        <td class="py-3 px-4 font-medium">Prompt Engineering</td>
+                        <td class="text-center py-3 px-4 text-green-400">Minutes</td>
+                        <td class="text-center py-3 px-4 text-green-400">$</td>
+                        <td class="text-center py-3 px-4 text-yellow-400">Medium</td>
+                        <td class="text-center py-3 px-4 text-yellow-400">API-dependent</td>
+                        <td class="py-3 px-4">Quick prototypes, general tasks</td>
+                    </tr>
+                    <tr class="border-b border-slate-700/50">
+                        <td class="py-3 px-4 font-medium">RAG</td>
+                        <td class="text-center py-3 px-4 text-yellow-400">Days</td>
+                        <td class="text-center py-3 px-4 text-yellow-400">$$</td>
+                        <td class="text-center py-3 px-4 text-green-400">High</td>
+                        <td class="text-center py-3 px-4 text-green-400">Controllable</td>
+                        <td class="py-3 px-4">Dynamic knowledge, citations needed</td>
+                    </tr>
+                    <tr class="border-b border-slate-700/50">
+                        <td class="py-3 px-4 font-medium">Fine-tuning</td>
+                        <td class="text-center py-3 px-4 text-red-400">Weeks</td>
+                        <td class="text-center py-3 px-4 text-red-400">$$$</td>
+                        <td class="text-center py-3 px-4 text-green-400">Highest</td>
+                        <td class="text-center py-3 px-4 text-green-400">Can self-host</td>
+                        <td class="py-3 px-4">Specialized domains, unique style</td>
+                    </tr>
+                    <tr>
+                        <td class="py-3 px-4 font-medium">Self-hosting</td>
+                        <td class="text-center py-3 px-4 text-red-400">Weeks</td>
+                        <td class="text-center py-3 px-4 text-yellow-400">$$*</td>
+                        <td class="text-center py-3 px-4 text-yellow-400">Varies</td>
+                        <td class="text-center py-3 px-4 text-green-400">Full control</td>
+                        <td class="py-3 px-4">High volume, strict privacy</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="text-slate-500 text-xs mt-4">* Self-hosting cost depends on volume - can be cheaper at scale</p>
+    </div>
+</div>
+
+<script>
+// RAG vs Fine-tuning Decision Guide
+function ragDecisionGuide() {
+    return {
+        step: 1,
+        answers: {},
+        result: {},
+        currentProgress: 0,
+        
+        answer(question, value) {
+            this.answers[question] = value;
+            this.currentProgress = question;
+            
+            if (question < 4) {
+                this.step = question + 1;
+            } else {
+                this.calculateResult();
+            }
+        },
+        
+        calculateResult() {
+            const { 1: dataChange, 2: dataAmount, 3: citations, 4: budget } = this.answers;
+            
+            // Decision logic
+            if (dataChange === 'yes' || citations === 'yes') {
+                this.result = {
+                    icon: '📚',
+                    title: 'RAG (Retrieval-Augmented Generation)',
+                    subtitle: 'Best for dynamic knowledge with citations',
+                    description: 'RAG lets you update knowledge without retraining, provides source citations, and works with any LLM provider.',
+                    pros: ['Real-time updates', 'Source citations', 'Cost effective', 'No training needed'],
+                    learnMore: '/learn/rag'
+                };
+            } else if (dataAmount === 'lots' && budget !== 'low') {
+                this.result = {
+                    icon: '🎯',
+                    title: 'Fine-tuning',
+                    subtitle: 'Best for specialized domains',
+                    description: 'Fine-tuning creates a specialized model that excels at your specific task with consistent style and behavior.',
+                    pros: ['Highest accuracy', 'Consistent style', 'Faster inference', 'Lower per-token cost'],
+                    learnMore: '/learn/fine-tuning'
+                };
+            } else {
+                this.result = {
+                    icon: '✍️',
+                    title: 'Prompt Engineering',
+                    subtitle: 'Best for quick iteration',
+                    description: 'Start with well-crafted prompts using few-shot examples. Often sufficient for many use cases without additional infrastructure.',
+                    pros: ['Fastest to start', 'No infrastructure', 'Easy to iterate', 'Lowest cost'],
+                    learnMore: '/learn/llm-fundamentals/prompt-engineering'
+                };
+            }
+            
+            this.step = 'result';
+        },
+        
+        reset() {
+            this.step = 1;
+            this.answers = {};
+            this.result = {};
+            this.currentProgress = 0;
+        }
+    };
+}
+
+// LLM Provider Decision Guide
+function llmProviderGuide() {
+    return {
+        step: 1,
+        answers: {},
+        result: {},
+        currentProgress: 0,
+        
+        answer(question, value) {
+            this.answers[question] = value;
+            this.currentProgress = question;
+            
+            if (question < 4) {
+                this.step = question + 1;
+            } else {
+                this.calculateResult();
+            }
+        },
+        
+        calculateResult() {
+            const { 1: useCase, 2: cost, 3: multimodal, 4: privacy } = this.answers;
+            
+            if (privacy === 'strict') {
+                this.result = {
+                    icon: '🦙',
+                    title: 'Self-hosted Open Models',
+                    subtitle: 'Full data control',
+                    description: 'Run open-source models on your infrastructure. DeepSeek-V3.2, Qwen3-235B, and GLM-4.7 lead in open models.',
+                    bestModel: 'DeepSeek-V3.2, Qwen3-235B-A22B, or GLM-4.7',
+                    cost: '$0.28-0.60/1M input (or self-host)',
+                    alternatives: ['Kimi K2', 'MiniMax M2.1', 'MiMo-V2-Flash']
+                };
+            } else if (useCase === 'code' && cost !== 'cheap') {
+                this.result = {
+                    icon: '🟣',
+                    title: 'Anthropic Claude',
+                    subtitle: 'Top ranked for code & reasoning',
+                    description: 'Claude Opus 4.5 ranks #1 on the leaderboard with 87% GPQA. Excellent for code generation, debugging, and complex reasoning.',
+                    bestModel: 'Claude Opus 4.5 (best) / Claude Sonnet 4.5',
+                    cost: '$5/1M input, $25/1M output (Opus 4.5)',
+                    alternatives: ['GPT-5.2 Codex', 'Gemini 3 Pro', 'DeepSeek-V3.2']
+                };
+            } else if (multimodal === 'yes') {
+                this.result = {
+                    icon: '🔵',
+                    title: 'Google Gemini',
+                    subtitle: 'Best multimodal + 1M context',
+                    description: 'Gemini 3 Pro ranks #2 with 91.9% GPQA, 1M token context, and native multimodal support for images, video, and audio.',
+                    bestModel: 'Gemini 3 Pro / Gemini 3 Flash',
+                    cost: '$2/1M input, $12/1M output (Pro)',
+                    alternatives: ['GPT-5.2', 'Claude Opus 4.5', 'Gemini 2.5 Pro']
+                };
+            } else if (cost === 'cheap') {
+                this.result = {
+                    icon: '🟢',
+                    title: 'DeepSeek or Gemini Flash',
+                    subtitle: 'Best cost-performance ratio',
+                    description: 'DeepSeek-V3.2 offers excellent performance at $0.28/1M input. Gemini 3 Flash at $0.50/1M is also great value.',
+                    bestModel: 'DeepSeek-V3.2, Gemini 3 Flash, or MiMo-V2-Flash',
+                    cost: '$0.10-0.50/1M input',
+                    alternatives: ['GPT-4.1 mini', 'GLM-4.6', 'MiniMax M2.1']
+                };
+            } else {
+                this.result = {
+                    icon: '🟢',
+                    title: 'OpenAI GPT-5.2',
+                    subtitle: 'Best all-around choice',
+                    description: 'GPT-5.2 ranks #3 with 92.4% GPQA, 400K context, and excellent balance of speed and capabilities.',
+                    bestModel: 'GPT-5.2 / GPT-5.1',
+                    cost: '$1.75/1M input, $14/1M output',
+                    alternatives: ['Claude Sonnet 4.5', 'Gemini 3 Pro', 'Grok-4']
+                };
+            }
+            
+            this.step = 'result';
+        },
+        
+        reset() {
+            this.step = 1;
+            this.answers = {};
+            this.result = {};
+            this.currentProgress = 0;
+        }
+    };
+}
+
+// Vector DB Decision Guide
+function vectorDbGuide() {
+    return {
+        step: 1,
+        answers: {},
+        result: {},
+        currentProgress: 0,
+        
+        answer(question, value) {
+            this.answers[question] = value;
+            this.currentProgress = question;
+            
+            if (question < 3) {
+                this.step = question + 1;
+            } else {
+                this.calculateResult();
+            }
+        },
+        
+        calculateResult() {
+            const { 1: scale, 2: deployment, 3: filtering } = this.answers;
+            
+            if (scale === 'small' && deployment === 'selfhost') {
+                this.result = {
+                    icon: '🔮',
+                    title: 'ChromaDB',
+                    subtitle: 'Perfect for prototypes and small scale',
+                    description: 'Lightweight, easy to use, runs in-memory or with SQLite persistence. Great for learning and prototypes.',
+                    freeTier: 'Unlimited (open source)',
+                    bestFor: 'Prototypes, <100K vectors',
+                    learnMore: '/learn/embeddings-vectors/vector-db-intro'
+                };
+            } else if (scale === 'large' || filtering === 'yes') {
+                this.result = {
+                    icon: '🌲',
+                    title: 'Pinecone',
+                    subtitle: 'Best managed solution at scale',
+                    description: 'Fully managed, scales to billions of vectors, excellent filtering and metadata support.',
+                    freeTier: '100K vectors free',
+                    bestFor: 'Production, complex queries',
+                    learnMore: '/learn/embeddings-vectors/vector-db-options'
+                };
+            } else if (deployment === 'managed') {
+                this.result = {
+                    icon: '🔷',
+                    title: 'Weaviate Cloud',
+                    subtitle: 'Great balance of features',
+                    description: 'Managed vector database with built-in vectorization, hybrid search, and GraphQL API.',
+                    freeTier: '100K vectors free',
+                    bestFor: 'Production with hybrid search',
+                    learnMore: '/learn/embeddings-vectors/vector-db-options'
+                };
+            } else {
+                this.result = {
+                    icon: '🐘',
+                    title: 'pgvector (PostgreSQL)',
+                    subtitle: 'Leverage existing infrastructure',
+                    description: 'Add vector search to your existing PostgreSQL database. Familiar tooling, no new infrastructure.',
+                    freeTier: 'Part of PostgreSQL',
+                    bestFor: 'Teams already using PostgreSQL',
+                    learnMore: '/learn/embeddings-vectors/vector-db-options'
+                };
+            }
+            
+            this.step = 'result';
+        },
+        
+        reset() {
+            this.step = 1;
+            this.answers = {};
+            this.result = {};
+            this.currentProgress = 0;
+        }
+    };
+}
+
+// Self-host Decision Guide
+function selfHostGuide() {
+    return {
+        step: 1,
+        answers: {},
+        result: {},
+        currentProgress: 0,
+        
+        answer(question, value) {
+            this.answers[question] = value;
+            this.currentProgress = question;
+            
+            if (question < 3) {
+                this.step = question + 1;
+            } else {
+                this.calculateResult();
+            }
+        },
+        
+        calculateResult() {
+            const { 1: volume, 2: sensitivity, 3: expertise } = this.answers;
+            
+            if (sensitivity === 'high') {
+                this.result = {
+                    icon: '🔐',
+                    title: 'Self-Host Required',
+                    subtitle: 'Data stays on your infrastructure',
+                    description: 'For HIPAA, PII, or highly sensitive data, self-hosting ensures data never leaves your control.',
+                    recommendations: ['Ollama + Llama 3.1', 'vLLM for high throughput', 'Azure OpenAI with data protection'],
+                    learnMore: '/learn/self-hosting'
+                };
+            } else if (volume === 'high' && expertise === 'yes') {
+                this.result = {
+                    icon: '💰',
+                    title: 'Self-Host for Cost Savings',
+                    subtitle: 'Significant savings at scale',
+                    description: 'At >$5K/month API spend, self-hosting can reduce costs by 50-80% with proper optimization.',
+                    recommendations: ['vLLM on A100 GPUs', 'Llama 3.1 70B', 'Consider hybrid approach'],
+                    learnMore: '/learn/self-hosting'
+                };
+            } else if (expertise === 'no' || volume === 'low') {
+                this.result = {
+                    icon: '☁️',
+                    title: 'Use Cloud APIs',
+                    subtitle: 'Focus on your product, not infrastructure',
+                    description: 'Cloud APIs offer the best developer experience with no infrastructure overhead. Self-hosting complexity isn\'t worth it at your scale.',
+                    recommendations: ['OpenAI API', 'Anthropic Claude', 'Consider rate limit tiers'],
+                    learnMore: '/learn/llm-fundamentals/intro-to-llms/first-api-call'
+                };
+            } else {
+                this.result = {
+                    icon: '🔀',
+                    title: 'Hybrid Approach',
+                    subtitle: 'Best of both worlds',
+                    description: 'Use cloud APIs for complex tasks, self-host simpler models for high-volume, cost-sensitive workloads.',
+                    recommendations: ['GPT-4 for complex tasks', 'Self-host Mistral for simple ones', 'Router pattern'],
+                    learnMore: '/learn/self-hosting/hybrid-architectures'
+                };
+            }
+            
+            this.step = 'result';
+        },
+        
+        reset() {
+            this.step = 1;
+            this.answers = {};
+            this.result = {};
+            this.currentProgress = 0;
+        }
+    };
+}
+</script>
+{% endblock %}

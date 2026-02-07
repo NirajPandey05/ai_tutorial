@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block head %}
+<script src="/static/js/gamification.js"></script>
+<style>
+    .badge-card {
+        transition: all 0.3s ease;
+    }
+    
+    .badge-card:hover {
+        transform: translateY(-4px);
+    }
+    
+    .badge-card.locked {
+        filter: grayscale(100%);
+        opacity: 0.5;
+    }
+    
+    .badge-icon {
+        font-size: 3rem;
+    }
+    
+    .rarity-common { border-color: #94a3b8; }
+    .rarity-uncommon { border-color: #22c55e; }
+    .rarity-rare { border-color: #3b82f6; }
+    .rarity-legendary { border-color: #f59e0b; }
+    
+    .skill-node {
+        transition: all 0.3s ease;
+    }
+    
+    .skill-node.locked {
+        opacity: 0.4;
+    }
+    
+    .skill-node.unlocked {
+        box-shadow: 0 0 20px rgba(14, 165, 233, 0.3);
+    }
+    
+    .streak-flame {
+        animation: flame-pulse 1s ease-in-out infinite;
+    }
+    
+    @keyframes flame-pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+    
+    .activity-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+    }
+    
+    .activity-dot.active {
+        background: #22c55e;
+    }
+    
+    .activity-dot.inactive {
+        background: #334155;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="p-6" x-data="achievementsPage()" x-init="init()">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-white mb-2">🏆 Achievements & Progress</h1>
+        <p class="text-slate-400">Track your learning journey and earn badges</p>
+    </div>
+    
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+        <div class="bg-slate-800 rounded-xl p-4 text-center">
+            <div class="text-3xl font-bold text-primary-400" x-text="stats.lessonsCompleted"></div>
+            <div class="text-sm text-slate-400">Lessons</div>
+        </div>
+        <div class="bg-slate-800 rounded-xl p-4 text-center">
+            <div class="text-3xl font-bold text-green-400" x-text="stats.labsCompleted"></div>
+            <div class="text-sm text-slate-400">Labs</div>
+        </div>
+        <div class="bg-slate-800 rounded-xl p-4 text-center">
+            <div class="text-3xl font-bold text-purple-400" x-text="stats.quizzesPassed"></div>
+            <div class="text-sm text-slate-400">Quizzes</div>
+        </div>
+        <div class="bg-slate-800 rounded-xl p-4 text-center">
+            <div class="text-3xl font-bold text-amber-400" x-text="stats.challengesSolved"></div>
+            <div class="text-sm text-slate-400">Challenges</div>
+        </div>
+        <div class="bg-slate-800 rounded-xl p-4 text-center">
+            <div class="text-3xl font-bold text-rose-400" x-text="stats.badgesEarned + '/' + stats.totalBadges"></div>
+            <div class="text-sm text-slate-400">Badges</div>
+        </div>
+        <div class="bg-slate-800 rounded-xl p-4 text-center">
+            <div class="text-3xl font-bold text-cyan-400" x-text="stats.modulesCompleted"></div>
+            <div class="text-sm text-slate-400">Modules</div>
+        </div>
+    </div>
+    
+    <!-- Streak Section -->
+    <div class="bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl p-6 mb-8 border border-orange-500/30">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="streak-flame text-5xl">🔥</div>
+                <div>
+                    <div class="text-2xl font-bold text-white"><span x-text="stats.currentStreak"></span> Day Streak</div>
+                    <div class="text-slate-400">Keep learning daily to maintain your streak!</div>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-sm text-slate-400">Longest Streak</div>
+                <div class="text-xl font-bold text-orange-400"><span x-text="stats.longestStreak"></span> Days</div>
+            </div>
+        </div>
+        
+        <!-- Activity Heatmap (Last 7 weeks) -->
+        <div class="mt-6">
+            <div class="text-sm text-slate-400 mb-2">Activity (Last 7 weeks)</div>
+            <div class="flex gap-1" id="activity-heatmap">
+                <template x-for="week in activityWeeks" :key="week.weekNum">
+                    <div class="flex flex-col gap-1">
+                        <template x-for="day in week.days" :key="day.date">
+                            <div 
+                                class="activity-dot" 
+                                :class="day.active ? 'active' : 'inactive'"
+                                :title="day.date">
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabs -->
+    <div class="flex gap-2 mb-6">
+        <button 
+            @click="activeTab = 'badges'" 
+            :class="activeTab === 'badges' ? 'bg-primary-500 text-white' : 'bg-slate-700 text-slate-300'"
+            class="px-4 py-2 rounded-lg font-medium transition-colors">
+            🏅 Badges
+        </button>
+        <button 
+            @click="activeTab = 'skills'" 
+            :class="activeTab === 'skills' ? 'bg-primary-500 text-white' : 'bg-slate-700 text-slate-300'"
+            class="px-4 py-2 rounded-lg font-medium transition-colors">
+            🌳 Skill Tree
+        </button>
+    </div>
+    
+    <!-- Badges Tab -->
+    <div x-show="activeTab === 'badges'">
+        <template x-for="(badges, category) in badgesByCategory" :key="category">
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold text-white mb-4 capitalize" x-text="formatCategory(category)"></h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    <template x-for="badge in badges" :key="badge.id">
+                        <div 
+                            class="badge-card bg-slate-800 rounded-xl p-4 border-2 text-center"
+                            :class="[
+                                badge.earned ? '' : 'locked',
+                                'rarity-' + badge.rarity
+                            ]">
+                            <div class="badge-icon mb-2" x-text="badge.icon"></div>
+                            <div class="font-semibold text-white mb-1" x-text="badge.name"></div>
+                            <div class="text-xs text-slate-400 mb-2" x-text="badge.description"></div>
+                            <div x-show="badge.earned" class="text-xs text-green-400">
+                                ✓ Earned
+                            </div>
+                            <div x-show="!badge.earned" class="text-xs text-slate-500">
+                                🔒 Locked
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </template>
+    </div>
+    
+    <!-- Skill Tree Tab -->
+    <div x-show="activeTab === 'skills'">
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <template x-for="(tier, tierName) in skillTree" :key="tierName">
+                <div class="bg-slate-800 rounded-xl p-6">
+                    <h3 class="text-lg font-semibold text-white mb-4" x-text="tier.name"></h3>
+                    <div class="space-y-4">
+                        <template x-for="skill in tier.skills" :key="skill.id">
+                            <div 
+                                class="skill-node p-4 rounded-lg border-2"
+                                :class="skill.unlocked ? 'border-primary-500 bg-primary-500/10 unlocked' : 'border-slate-600 locked'">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-2xl" x-text="skill.icon"></span>
+                                    <div class="flex-1">
+                                        <div class="font-medium" :class="skill.unlocked ? 'text-white' : 'text-slate-500'" x-text="skill.name"></div>
+                                        <div class="h-2 bg-slate-700 rounded-full mt-2 overflow-hidden">
+                                            <div 
+                                                class="h-full bg-primary-500 transition-all"
+                                                :style="'width: ' + skill.progress + '%'">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span x-show="skill.unlocked" class="text-green-400">✓</span>
+                                    <span x-show="!skill.unlocked" class="text-slate-500">🔒</span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="mt-8 bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+        <h3 class="text-lg font-semibold text-white mb-4">🚀 Continue Learning</h3>
+        <div class="flex flex-wrap gap-4">
+            <a href="/quiz/llmBasics" class="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg transition-colors">
+                📝 Take a Quiz
+            </a>
+            <a href="/challenges" class="px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 rounded-lg transition-colors">
+                💻 Solve a Challenge
+            </a>
+            <a href="/learning-paths" class="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-lg transition-colors">
+                🎯 Pick a Learning Path
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function achievementsPage() {
+    return {
+        activeTab: 'badges',
+        stats: {},
+        badgesByCategory: {},
+        skillTree: {},
+        activityWeeks: [],
+        
+        init() {
+            this.loadData();
+            this.generateActivityHeatmap();
+        },
+        
+        loadData() {
+            this.stats = window.gamification.getStats();
+            this.badgesByCategory = window.gamification.getBadgesByCategory();
+            this.skillTree = window.gamification.getSkillTree();
+        },
+        
+        formatCategory(category) {
+            return category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        },
+        
+        generateActivityHeatmap() {
+            // Generate last 7 weeks of activity data
+            const weeks = [];
+            const activityHistory = window.gamification.streaks.activityHistory || [];
+            const activityDates = new Set(activityHistory.map(a => a.date));
+            
+            for (let week = 6; week >= 0; week--) {
+                const days = [];
+                for (let day = 0; day < 7; day++) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - (week * 7 + (6 - day)));
+                    const dateStr = date.toDateString();
+                    days.push({
+                        date: dateStr,
+                        active: activityDates.has(dateStr)
+                    });
+                }
+                weeks.push({ weekNum: 6 - week, days });
+            }
+            
+            this.activityWeeks = weeks;
+        }
+    };
+}
+</script>
+{% endblock %}

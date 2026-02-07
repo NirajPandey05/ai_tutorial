@@ -1,0 +1,705 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .calculator-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    
+    @media (max-width: 1024px) {
+        .calculator-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .input-section {
+        background: #1e293b;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+    }
+    
+    .results-section {
+        background: #0f172a;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        border: 1px solid #334155;
+    }
+    
+    .slider-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .slider-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+    
+    .slider-label {
+        font-size: 0.875rem;
+        color: #e2e8f0;
+    }
+    
+    .slider-value {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #38bdf8;
+    }
+    
+    .slider-input {
+        width: 100%;
+        height: 8px;
+        background: #334155;
+        border-radius: 4px;
+        appearance: none;
+        cursor: pointer;
+    }
+    
+    .slider-input::-webkit-slider-thumb {
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        background: #0ea5e9;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+    
+    .slider-input::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: #0ea5e9;
+        border-radius: 50%;
+        cursor: pointer;
+        border: none;
+    }
+    
+    .preset-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+    
+    .preset-btn {
+        padding: 0.5rem 1rem;
+        background: #334155;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        color: #e2e8f0;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .preset-btn:hover {
+        background: #475569;
+    }
+    
+    .preset-btn.active {
+        background: #0ea5e9;
+        color: white;
+    }
+    
+    .cost-breakdown {
+        background: #1e293b;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        margin-top: 1rem;
+    }
+    
+    .cost-breakdown-header {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        background: #334155;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #94a3b8;
+        font-weight: 600;
+    }
+    
+    .cost-breakdown-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #334155;
+        align-items: center;
+    }
+    
+    .cost-breakdown-row:last-child {
+        border-bottom: none;
+    }
+    
+    .provider-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .provider-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+    }
+    
+    .total-card {
+        background: linear-gradient(135deg, #0ea5e9, #8b5cf6);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    .total-amount {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: white;
+    }
+    
+    .total-period {
+        font-size: 0.875rem;
+        color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .comparison-chart {
+        height: 200px;
+        display: flex;
+        align-items: flex-end;
+        gap: 0.5rem;
+        padding: 1rem;
+        background: #1e293b;
+        border-radius: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .chart-bar-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100%;
+    }
+    
+    .chart-bar {
+        width: 100%;
+        max-width: 60px;
+        border-radius: 4px 4px 0 0;
+        transition: height 0.3s ease;
+    }
+    
+    .chart-label {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        text-align: center;
+        margin-top: 0.5rem;
+        word-break: break-word;
+    }
+    
+    .chart-value {
+        font-size: 0.75rem;
+        color: #e2e8f0;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .savings-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background: #10b981;
+        color: white;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+    
+    .tip-box {
+        background: #1e3a5f;
+        border-left: 4px solid #0ea5e9;
+        padding: 1rem;
+        border-radius: 0 0.5rem 0.5rem 0;
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="p-6" x-data="costCalculator()" x-init="init()">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-white flex items-center gap-3">
+            <span>💰</span>
+            LLM Cost Calculator
+        </h1>
+        <p class="text-slate-400 mt-1">Estimate and compare costs across different LLM providers</p>
+    </div>
+    
+    <!-- Preset Scenarios -->
+    <div class="preset-buttons">
+        <button @click="loadPreset('chatbot')" :class="{'active': activePreset === 'chatbot'}" class="preset-btn">
+            💬 Chatbot
+        </button>
+        <button @click="loadPreset('rag')" :class="{'active': activePreset === 'rag'}" class="preset-btn">
+            📚 RAG System
+        </button>
+        <button @click="loadPreset('agent')" :class="{'active': activePreset === 'agent'}" class="preset-btn">
+            🤖 AI Agent
+        </button>
+        <button @click="loadPreset('batch')" :class="{'active': activePreset === 'batch'}" class="preset-btn">
+            📊 Batch Processing
+        </button>
+        <button @click="loadPreset('startup')" :class="{'active': activePreset === 'startup'}" class="preset-btn">
+            🚀 Startup MVP
+        </button>
+        <button @click="loadPreset('enterprise')" :class="{'active': activePreset === 'enterprise'}" class="preset-btn">
+            🏢 Enterprise
+        </button>
+    </div>
+    
+    <div class="calculator-grid">
+        <!-- Input Section -->
+        <div class="input-section">
+            <h2 class="text-lg font-semibold text-white mb-4">Usage Parameters</h2>
+            
+            <!-- Requests per Day -->
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">Requests per Day</span>
+                    <span class="slider-value" x-text="formatNumber(requestsPerDay)"></span>
+                </div>
+                <input 
+                    type="range" 
+                    x-model="requestsPerDay" 
+                    min="10" 
+                    max="100000" 
+                    step="10"
+                    class="slider-input"
+                    @input="calculate()">
+            </div>
+            
+            <!-- Avg Input Tokens -->
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">Avg Input Tokens per Request</span>
+                    <span class="slider-value" x-text="formatNumber(avgInputTokens)"></span>
+                </div>
+                <input 
+                    type="range" 
+                    x-model="avgInputTokens" 
+                    min="50" 
+                    max="100000" 
+                    step="50"
+                    class="slider-input"
+                    @input="calculate()">
+            </div>
+            
+            <!-- Avg Output Tokens -->
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">Avg Output Tokens per Request</span>
+                    <span class="slider-value" x-text="formatNumber(avgOutputTokens)"></span>
+                </div>
+                <input 
+                    type="range" 
+                    x-model="avgOutputTokens" 
+                    min="50" 
+                    max="4000" 
+                    step="50"
+                    class="slider-input"
+                    @input="calculate()">
+            </div>
+            
+            <!-- Time Period -->
+            <div class="mb-4">
+                <label class="slider-label block mb-2">Time Period</label>
+                <div class="flex gap-2">
+                    <button 
+                        @click="timePeriod = 'daily'; calculate()" 
+                        :class="timePeriod === 'daily' ? 'bg-primary-500' : 'bg-slate-700'"
+                        class="px-4 py-2 rounded-lg text-white text-sm">Daily</button>
+                    <button 
+                        @click="timePeriod = 'monthly'; calculate()" 
+                        :class="timePeriod === 'monthly' ? 'bg-primary-500' : 'bg-slate-700'"
+                        class="px-4 py-2 rounded-lg text-white text-sm">Monthly</button>
+                    <button 
+                        @click="timePeriod = 'yearly'; calculate()" 
+                        :class="timePeriod === 'yearly' ? 'bg-primary-500' : 'bg-slate-700'"
+                        class="px-4 py-2 rounded-lg text-white text-sm">Yearly</button>
+                </div>
+            </div>
+            
+            <!-- Model Selection -->
+            <div class="mb-4">
+                <label class="slider-label block mb-2">Primary Model</label>
+                <select x-model="selectedModel" @change="calculate()" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white">
+                    <optgroup label="OpenAI">
+                        <option value="gpt-4o">GPT-4o</option>
+                        <option value="gpt-4o-mini">GPT-4o Mini</option>
+                        <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                        <option value="o1">O1 (Reasoning)</option>
+                        <option value="o1-mini">O1 Mini</option>
+                    </optgroup>
+                    <optgroup label="Anthropic">
+                        <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
+                        <option value="claude-3-opus">Claude 3 Opus</option>
+                        <option value="claude-3-haiku">Claude 3 Haiku</option>
+                    </optgroup>
+                    <optgroup label="Google">
+                        <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                        <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                        <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                    </optgroup>
+                    <optgroup label="xAI">
+                        <option value="grok-2">Grok 2</option>
+                    </optgroup>
+                </select>
+            </div>
+            
+            <!-- Summary Stats -->
+            <div class="mt-6 p-4 bg-slate-800/50 rounded-lg">
+                <h3 class="text-sm font-semibold text-slate-400 mb-3">Usage Summary</h3>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-slate-500">Total Requests:</span>
+                        <span class="text-white ml-2" x-text="formatNumber(totalRequests)"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">Total Tokens:</span>
+                        <span class="text-white ml-2" x-text="formatNumber(totalTokens)"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">Input Tokens:</span>
+                        <span class="text-white ml-2" x-text="formatNumber(totalInputTokens)"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">Output Tokens:</span>
+                        <span class="text-white ml-2" x-text="formatNumber(totalOutputTokens)"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div class="results-section">
+            <h2 class="text-lg font-semibold text-white mb-4">Cost Estimate</h2>
+            
+            <!-- Total Cost Card -->
+            <div class="total-card">
+                <div class="total-amount" x-text="'$' + formatCurrency(selectedModelCost)"></div>
+                <div class="total-period">
+                    <span x-text="getModelDisplayName(selectedModel)"></span> 
+                    (<span x-text="timePeriod === 'daily' ? 'per day' : timePeriod === 'monthly' ? 'per month' : 'per year'"></span>)
+                </div>
+            </div>
+            
+            <!-- Potential Savings -->
+            <div x-show="cheapestModel !== selectedModel" class="text-center mb-4">
+                <span class="savings-badge">
+                    💡 Switch to <span x-text="getModelDisplayName(cheapestModel)"></span> to save <span x-text="'$' + formatCurrency(selectedModelCost - cheapestCost)"></span>
+                </span>
+            </div>
+            
+            <!-- Provider Comparison Chart -->
+            <h3 class="text-sm font-semibold text-slate-400 mb-2">Provider Comparison</h3>
+            <div class="comparison-chart">
+                <template x-for="(cost, model) in modelCosts" :key="model">
+                    <div class="chart-bar-container">
+                        <div class="chart-value" x-text="'$' + formatCurrency(cost)"></div>
+                        <div 
+                            class="chart-bar flex-grow"
+                            :style="{ 
+                                height: getBarHeight(cost) + '%',
+                                background: getModelColor(model)
+                            }">
+                        </div>
+                        <div class="chart-label" x-text="getModelShortName(model)"></div>
+                    </div>
+                </template>
+            </div>
+            
+            <!-- Cost Breakdown Table -->
+            <h3 class="text-sm font-semibold text-slate-400 mt-6 mb-2">Detailed Breakdown</h3>
+            <div class="cost-breakdown">
+                <div class="cost-breakdown-header">
+                    <span>Model</span>
+                    <span>Input Cost</span>
+                    <span>Output Cost</span>
+                    <span>Total</span>
+                </div>
+                <template x-for="(cost, model) in modelCosts" :key="model">
+                    <div class="cost-breakdown-row" :class="{'bg-primary-500/10': model === selectedModel}">
+                        <div class="provider-cell">
+                            <div class="provider-icon" :style="{ background: getModelColor(model) }">
+                                <span x-text="getModelEmoji(model)"></span>
+                            </div>
+                            <span class="text-white text-sm" x-text="getModelDisplayName(model)"></span>
+                        </div>
+                        <span class="text-slate-300 text-sm" x-text="'$' + formatCurrency(getInputCost(model))"></span>
+                        <span class="text-slate-300 text-sm" x-text="'$' + formatCurrency(getOutputCost(model))"></span>
+                        <span class="text-white font-semibold text-sm" x-text="'$' + formatCurrency(cost)"></span>
+                    </div>
+                </template>
+            </div>
+            
+            <!-- Tips -->
+            <div class="tip-box">
+                <h4 class="font-semibold text-white mb-1">💡 Cost Optimization Tips</h4>
+                <ul class="text-sm text-slate-300 space-y-1">
+                    <li x-show="avgInputTokens > 2000">• Consider using context caching to reduce repeated input costs</li>
+                    <li x-show="avgOutputTokens > 1000">• Use max_tokens parameter to limit output length</li>
+                    <li>• Use smaller models for simple tasks, larger for complex reasoning</li>
+                    <li>• Batch requests during off-peak hours when possible</li>
+                    <li x-show="requestsPerDay > 10000">• Consider negotiating volume discounts with providers</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pricing Reference -->
+    <div class="mt-6 bg-slate-800/50 rounded-lg p-4">
+        <h3 class="text-sm font-semibold text-slate-300 mb-3">📊 Current Pricing Reference (per 1M tokens)</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-slate-400 border-b border-slate-700">
+                        <th class="py-2">Model</th>
+                        <th class="py-2">Input</th>
+                        <th class="py-2">Output</th>
+                        <th class="py-2">Context Window</th>
+                    </tr>
+                </thead>
+                <tbody class="text-slate-300">
+                    <template x-for="(pricing, model) in pricingData" :key="model">
+                        <tr class="border-b border-slate-700/50">
+                            <td class="py-2" x-text="getModelDisplayName(model)"></td>
+                            <td class="py-2" x-text="'$' + pricing.input"></td>
+                            <td class="py-2" x-text="'$' + pricing.output"></td>
+                            <td class="py-2" x-text="formatNumber(pricing.context) + ' tokens'"></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+        <p class="text-xs text-slate-500 mt-2">* Prices as of January 2025. Check provider websites for current pricing.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function costCalculator() {
+    return {
+        // Input parameters
+        requestsPerDay: 1000,
+        avgInputTokens: 500,
+        avgOutputTokens: 300,
+        timePeriod: 'monthly',
+        selectedModel: 'gpt-4o-mini',
+        activePreset: 'chatbot',
+        
+        // Calculated values
+        modelCosts: {},
+        
+        // Pricing data (per 1M tokens)
+        pricingData: {
+            'gpt-4o': { input: 2.50, output: 10.00, context: 128000 },
+            'gpt-4o-mini': { input: 0.15, output: 0.60, context: 128000 },
+            'gpt-4-turbo': { input: 10.00, output: 30.00, context: 128000 },
+            'gpt-3.5-turbo': { input: 0.50, output: 1.50, context: 16385 },
+            'o1': { input: 15.00, output: 60.00, context: 200000 },
+            'o1-mini': { input: 3.00, output: 12.00, context: 128000 },
+            'claude-3-5-sonnet': { input: 3.00, output: 15.00, context: 200000 },
+            'claude-3-opus': { input: 15.00, output: 75.00, context: 200000 },
+            'claude-3-haiku': { input: 0.25, output: 1.25, context: 200000 },
+            'gemini-1.5-pro': { input: 1.25, output: 5.00, context: 2000000 },
+            'gemini-1.5-flash': { input: 0.075, output: 0.30, context: 1000000 },
+            'gemini-2.0-flash': { input: 0.10, output: 0.40, context: 1000000 },
+            'grok-2': { input: 2.00, output: 10.00, context: 131072 }
+        },
+        
+        presets: {
+            chatbot: { requests: 1000, input: 500, output: 300, model: 'gpt-4o-mini' },
+            rag: { requests: 500, input: 3000, output: 500, model: 'gpt-4o' },
+            agent: { requests: 200, input: 5000, output: 1000, model: 'claude-3-5-sonnet' },
+            batch: { requests: 10000, input: 200, output: 100, model: 'gpt-3.5-turbo' },
+            startup: { requests: 5000, input: 800, output: 400, model: 'gpt-4o-mini' },
+            enterprise: { requests: 50000, input: 1500, output: 600, model: 'gpt-4o' }
+        },
+        
+        init() {
+            this.loadPreset('chatbot');
+        },
+        
+        loadPreset(preset) {
+            const p = this.presets[preset];
+            if (p) {
+                this.activePreset = preset;
+                this.requestsPerDay = p.requests;
+                this.avgInputTokens = p.input;
+                this.avgOutputTokens = p.output;
+                this.selectedModel = p.model;
+                this.calculate();
+            }
+        },
+        
+        calculate() {
+            this.modelCosts = {};
+            
+            for (const model of Object.keys(this.pricingData)) {
+                const pricing = this.pricingData[model];
+                const totalInput = this.totalInputTokens;
+                const totalOutput = this.totalOutputTokens;
+                
+                const inputCost = (totalInput / 1000000) * pricing.input;
+                const outputCost = (totalOutput / 1000000) * pricing.output;
+                
+                this.modelCosts[model] = inputCost + outputCost;
+            }
+        },
+        
+        get totalRequests() {
+            const multiplier = this.timePeriod === 'daily' ? 1 : 
+                              this.timePeriod === 'monthly' ? 30 : 365;
+            return this.requestsPerDay * multiplier;
+        },
+        
+        get totalInputTokens() {
+            return this.totalRequests * this.avgInputTokens;
+        },
+        
+        get totalOutputTokens() {
+            return this.totalRequests * this.avgOutputTokens;
+        },
+        
+        get totalTokens() {
+            return this.totalInputTokens + this.totalOutputTokens;
+        },
+        
+        get selectedModelCost() {
+            return this.modelCosts[this.selectedModel] || 0;
+        },
+        
+        get cheapestModel() {
+            let min = Infinity;
+            let cheapest = this.selectedModel;
+            for (const [model, cost] of Object.entries(this.modelCosts)) {
+                if (cost < min) {
+                    min = cost;
+                    cheapest = model;
+                }
+            }
+            return cheapest;
+        },
+        
+        get cheapestCost() {
+            return this.modelCosts[this.cheapestModel] || 0;
+        },
+        
+        getInputCost(model) {
+            const pricing = this.pricingData[model];
+            return (this.totalInputTokens / 1000000) * pricing.input;
+        },
+        
+        getOutputCost(model) {
+            const pricing = this.pricingData[model];
+            return (this.totalOutputTokens / 1000000) * pricing.output;
+        },
+        
+        getBarHeight(cost) {
+            const maxCost = Math.max(...Object.values(this.modelCosts));
+            if (maxCost === 0) return 0;
+            return (cost / maxCost) * 100;
+        },
+        
+        getModelColor(model) {
+            const colors = {
+                'gpt-4o': '#10a37f',
+                'gpt-4o-mini': '#10a37f',
+                'gpt-4-turbo': '#10a37f',
+                'gpt-3.5-turbo': '#10a37f',
+                'o1': '#10a37f',
+                'o1-mini': '#10a37f',
+                'claude-3-5-sonnet': '#d97706',
+                'claude-3-opus': '#d97706',
+                'claude-3-haiku': '#d97706',
+                'gemini-1.5-pro': '#4285f4',
+                'gemini-1.5-flash': '#4285f4',
+                'gemini-2.0-flash': '#4285f4',
+                'grok-2': '#6366f1'
+            };
+            return colors[model] || '#64748b';
+        },
+        
+        getModelEmoji(model) {
+            if (model.startsWith('gpt') || model.startsWith('o1')) return '🤖';
+            if (model.startsWith('claude')) return '🅰️';
+            if (model.startsWith('gemini')) return '🔷';
+            if (model.startsWith('grok')) return '⚡';
+            return '🤖';
+        },
+        
+        getModelDisplayName(model) {
+            const names = {
+                'gpt-4o': 'GPT-4o',
+                'gpt-4o-mini': 'GPT-4o Mini',
+                'gpt-4-turbo': 'GPT-4 Turbo',
+                'gpt-3.5-turbo': 'GPT-3.5 Turbo',
+                'o1': 'O1 (Reasoning)',
+                'o1-mini': 'O1 Mini',
+                'claude-3-5-sonnet': 'Claude 3.5 Sonnet',
+                'claude-3-opus': 'Claude 3 Opus',
+                'claude-3-haiku': 'Claude 3 Haiku',
+                'gemini-1.5-pro': 'Gemini 1.5 Pro',
+                'gemini-1.5-flash': 'Gemini 1.5 Flash',
+                'gemini-2.0-flash': 'Gemini 2.0 Flash',
+                'grok-2': 'Grok 2'
+            };
+            return names[model] || model;
+        },
+        
+        getModelShortName(model) {
+            const names = {
+                'gpt-4o': 'GPT-4o',
+                'gpt-4o-mini': '4o Mini',
+                'gpt-4-turbo': 'GPT-4T',
+                'gpt-3.5-turbo': '3.5T',
+                'o1': 'O1',
+                'o1-mini': 'O1m',
+                'claude-3-5-sonnet': 'Sonnet',
+                'claude-3-opus': 'Opus',
+                'claude-3-haiku': 'Haiku',
+                'gemini-1.5-pro': 'Gem Pro',
+                'gemini-1.5-flash': 'Gem Flash',
+                'gemini-2.0-flash': 'Gem 2.0',
+                'grok-2': 'Grok'
+            };
+            return names[model] || model;
+        },
+        
+        formatNumber(num) {
+            return new Intl.NumberFormat().format(Math.round(num));
+        },
+        
+        formatCurrency(num) {
+            if (num >= 1000) {
+                return new Intl.NumberFormat('en-US', { 
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0 
+                }).format(num);
+            }
+            return new Intl.NumberFormat('en-US', { 
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2 
+            }).format(num);
+        }
+    };
+}
+</script>
+{% endblock %}

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - AI Engineering Tutorial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center text-white">
+    <div class="text-center px-6">
+        <div class="text-8xl mb-6">📡</div>
+        <h1 class="text-3xl font-bold mb-4">You're Offline</h1>
+        <p class="text-slate-400 max-w-md mx-auto mb-8">
+            It looks like you've lost your internet connection. 
+            Don't worry - any progress you've made is saved locally and will sync when you're back online.
+        </p>
+        
+        <div class="space-y-4">
+            <button onclick="location.reload()" 
+                    class="px-6 py-3 bg-primary-600 hover:bg-primary-700 rounded-lg font-medium transition-colors">
+                Try Again
+            </button>
+            
+            <p class="text-sm text-slate-500">
+                Some pages you've visited before may still be available offline.
+            </p>
+        </div>
+        
+        <!-- Offline available content -->
+        <div class="mt-12" id="cached-pages">
+            <h2 class="text-xl font-semibold mb-4">Available Offline</h2>
+            <div id="cached-list" class="text-left max-w-md mx-auto space-y-2">
+                <p class="text-slate-500 text-sm">Checking cached pages...</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Check which pages are cached
+        if ('caches' in window) {
+            caches.open('ai-tutorial-content-v1').then(cache => {
+                cache.keys().then(requests => {
+                    const list = document.getElementById('cached-list');
+                    
+                    if (requests.length === 0) {
+                        list.innerHTML = '<p class="text-slate-500 text-sm">No pages cached yet. Visit some pages while online to make them available offline.</p>';
+                        return;
+                    }
+                    
+                    list.innerHTML = '';
+                    requests.forEach(request => {
+                        const url = new URL(request.url);
+                        if (url.pathname.startsWith('/learn/')) {
+                            const link = document.createElement('a');
+                            link.href = url.pathname;
+                            link.className = 'block p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors';
+                            link.innerHTML = `
+                                <span class="text-sm">${url.pathname}</span>
+                            `;
+                            list.appendChild(link);
+                        }
+                    });
+                    
+                    if (list.children.length === 0) {
+                        list.innerHTML = '<p class="text-slate-500 text-sm">No content pages cached yet.</p>';
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>

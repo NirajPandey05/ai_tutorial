@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block head %}
+<!-- Pyodide for Python execution -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+<script src="/static/js/coding-challenge.js"></script>
+<style>
+    .challenge-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="p-6">
+    <!-- Header -->
+    <div class="max-w-4xl mx-auto mb-6">
+        <div class="flex items-center gap-4 mb-4">
+            <a href="/challenges" class="text-slate-400 hover:text-white">
+                ← Back to Challenges
+            </a>
+        </div>
+    </div>
+    
+    <!-- Challenge Container -->
+    <div id="challenge-container" class="max-w-4xl mx-auto">
+        <div class="text-center py-12">
+            <div class="animate-pulse">
+                <div class="text-4xl mb-4">💻</div>
+                <p class="text-slate-400">Loading challenge...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let challenge;
+
+document.addEventListener('DOMContentLoaded', async function() {
+    const challengeType = '{{ challenge_type | default("twoSum") }}';
+    
+    // Custom challenge data from server (if any)
+    const customChallenge = {{ challenge_data | default('null') | safe }};
+    
+    // Initialize challenge engine
+    challenge = new CodingChallenge('challenge-container', {
+        maxAttempts: 10,
+        showHints: true
+    });
+    
+    // Load challenge - either custom or from ChallengeData
+    const challengeData = customChallenge || ChallengeData[challengeType] || ChallengeData.twoSum;
+    await challenge.loadChallenge(challengeData);
+});
+</script>
+{% endblock %}

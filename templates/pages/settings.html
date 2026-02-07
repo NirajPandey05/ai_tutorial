@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - API Keys{% endblock %}
+
+{% block breadcrumb %}
+<a href="/" class="hover:text-white">Home</a>
+<span class="mx-2">/</span>
+<span class="text-white">Settings</span>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-6 py-12">
+    <h1 class="text-3xl font-bold mb-2">⚙️ Settings</h1>
+    <p class="text-slate-400 mb-8">Configure your API keys to use the interactive labs. Keys are stored locally in your browser.</p>
+    
+    <div class="bg-slate-800 rounded-xl border border-slate-700 p-6" x-data="apiKeyManager()">
+        <h2 class="text-xl font-semibold mb-6">🔑 API Keys</h2>
+        
+        <div class="space-y-6">
+            <!-- Provider Card Template -->
+            <template x-for="provider in providers" :key="provider.id">
+                <div class="p-4 bg-slate-900 rounded-lg border border-slate-700">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl" x-text="provider.icon"></span>
+                            <div>
+                                <h3 class="font-semibold" x-text="provider.name"></h3>
+                                <p class="text-xs text-slate-500" x-text="provider.description"></p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span x-show="status[provider.id] === 'valid'" class="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">✓ Valid</span>
+                            <span x-show="status[provider.id] === 'invalid'" class="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full">✗ Invalid</span>
+                            <span x-show="status[provider.id] === 'configured'" class="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full">Configured</span>
+                            <span x-show="status[provider.id] === 'testing'" class="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full animate-pulse">Testing...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-2">
+                        <input 
+                            type="password" 
+                            x-model="inputs[provider.id]"
+                            :placeholder="provider.placeholder"
+                            class="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary-500 text-sm"
+                        >
+                        <button 
+                            @click="saveKey(provider.id)"
+                            :disabled="!inputs[provider.id]"
+                            class="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors text-sm"
+                        >
+                            Save
+                        </button>
+                        <button 
+                            @click="testKey(provider.id)"
+                            x-show="keys[provider.id]"
+                            :disabled="status[provider.id] === 'testing'"
+                            class="px-4 py-2 bg-slate-600 hover:bg-slate-500 disabled:opacity-50 rounded-lg transition-colors text-sm"
+                        >
+                            Test
+                        </button>
+                        <button 
+                            @click="clearKey(provider.id)"
+                            x-show="keys[provider.id]"
+                            class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors text-sm"
+                        >
+                            Clear
+                        </button>
+                    </div>
+                    
+                    <!-- Test Result -->
+                    <div x-show="messages[provider.id]" class="mt-3 p-3 rounded-lg text-sm"
+                         :class="status[provider.id] === 'valid' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'">
+                        <span x-text="messages[provider.id]"></span>
+                    </div>
+                    
+                    <p class="mt-2 text-xs text-slate-500">
+                        Get your key from <a :href="provider.url" target="_blank" class="text-primary-400 hover:underline" x-text="provider.urlLabel"></a>
+                    </p>
+                </div>
+            </template>
+        </div>
+        
+        <!-- Test All Keys Button -->
+        <div class="mt-6 flex gap-4">
+            <button 
+                @click="testAllKeys()"
+                :disabled="!hasAnyKey"
+                class="px-6 py-3 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors font-medium"
+            >
+                🧪 Test All Configured Keys
+            </button>
+            <button 
+                @click="clearAllKeys()"
+                x-show="hasAnyKey"
+                class="px-6 py-3 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors font-medium"
+            >
+                🗑️ Clear All Keys
+            </button>
+        </div>
+        
+        <!-- Security Notice -->
+        <div class="mt-8 p-4 bg-slate-900/50 rounded-lg border border-slate-600">
+            <h3 class="font-semibold text-yellow-400 mb-2">🔒 Security Note</h3>
+            <p class="text-sm text-slate-400">
+                API keys are stored in your browser's local storage and are never sent to our servers. 
+                They are only used to make direct API calls to the respective providers.
+                For maximum security, consider using keys with spending limits set.
+            </p>
+        </div>
+    </div>
+    
+    <!-- Default Provider Selection -->
+    <div class="bg-slate-800 rounded-xl border border-slate-700 p-6 mt-6" x-data="providerSelector()">
+        <h2 class="text-xl font-semibold mb-6">🎯 Default Provider</h2>
+        <p class="text-slate-400 mb-4">Select which provider to use by default in labs:</p>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <template x-for="provider in providers" :key="provider.id">
+                <button 
+                    @click="selectProvider(provider.id)"
+                    :class="selected === provider.id ? 'border-primary-500 bg-primary-500/10' : 'border-slate-600 hover:border-slate-500'"
+                    class="p-4 rounded-lg border-2 transition-colors text-center"
+                >
+                    <span class="text-2xl" x-text="provider.icon"></span>
+                    <p class="mt-2 font-medium" x-text="provider.name"></p>
+                    <p class="text-xs text-slate-500 mt-1" x-text="provider.defaultModel"></p>
+                </button>
+            </template>
+        </div>
+    </div>
+    
+    <!-- Model Selection -->
+    <div class="bg-slate-800 rounded-xl border border-slate-700 p-6 mt-6" x-data="modelSelector()">
+        <h2 class="text-xl font-semibold mb-6">🤖 Model Preferences</h2>
+        <p class="text-slate-400 mb-4">Set default models for each provider:</p>
+        
+        <div class="space-y-4">
+            <template x-for="provider in providers" :key="provider.id">
+                <div class="flex items-center gap-4">
+                    <div class="w-32 flex items-center gap-2">
+                        <span x-text="provider.icon"></span>
+                        <span class="text-sm font-medium" x-text="provider.name"></span>
+                    </div>
+                    <select 
+                        @change="setModel(provider.id, $event.target.value)"
+                        class="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary-500 text-sm"
+                    >
+                        <template x-for="model in provider.models" :key="model">
+                            <option :value="model" :selected="getModel(provider.id) === model" x-text="model"></option>
+                        </template>
+                    </select>
+                </div>
+            </template>
+        </div>
+    </div>
+</div>
+
+<script>
+function apiKeyManager() {
+    const providerList = [
+        { 
+            id: 'openai', 
+            name: 'OpenAI', 
+            icon: '🟢',
+            description: 'GPT-4o, GPT-4, GPT-3.5',
+            placeholder: 'sk-...',
+            url: 'https://platform.openai.com/api-keys',
+            urlLabel: 'platform.openai.com'
+        },
+        { 
+            id: 'anthropic', 
+            name: 'Anthropic', 
+            icon: '🟠',
+            description: 'Claude 3.5, Claude 3',
+            placeholder: 'sk-ant-...',
+            url: 'https://console.anthropic.com/',
+            urlLabel: 'console.anthropic.com'
+        },
+        { 
+            id: 'google', 
+            name: 'Google', 
+            icon: '🔵',
+            description: 'Gemini 1.5 Pro, Flash',
+            placeholder: 'AIza...',
+            url: 'https://aistudio.google.com/apikey',
+            urlLabel: 'Google AI Studio'
+        },
+        { 
+            id: 'xai', 
+            name: 'xAI', 
+            icon: '⚫',
+            description: 'Grok',
+            placeholder: 'xai-...',
+            url: 'https://console.x.ai/',
+            urlLabel: 'console.x.ai'
+        },
+    ];
+    
+    return {
+        providers: providerList,
+        keys: Object.fromEntries(providerList.map(p => [p.id, !!localStorage.getItem(`apiKey_${p.id}`)])),
+        inputs: Object.fromEntries(providerList.map(p => [p.id, ''])),
+        status: Object.fromEntries(providerList.map(p => [p.id, localStorage.getItem(`apiKey_${p.id}`) ? 'configured' : null])),
+        messages: Object.fromEntries(providerList.map(p => [p.id, ''])),
+        
+        get hasAnyKey() {
+            return Object.values(this.keys).some(k => k);
+        },
+        
+        saveKey(provider) {
+            const key = this.inputs[provider];
+            if (key) {
+                localStorage.setItem(`apiKey_${provider}`, key);
+                this.keys[provider] = true;
+                this.inputs[provider] = '';
+                this.status[provider] = 'configured';
+                this.messages[provider] = '';
+            }
+        },
+        
+        clearKey(provider) {
+            localStorage.removeItem(`apiKey_${provider}`);
+            this.keys[provider] = false;
+            this.status[provider] = null;
+            this.messages[provider] = '';
+        },
+        
+        clearAllKeys() {
+            if (confirm('Are you sure you want to clear all API keys?')) {
+                this.providers.forEach(p => this.clearKey(p.id));
+            }
+        },
+        
+        async testKey(provider) {
+            const key = localStorage.getItem(`apiKey_${provider}`);
+            if (!key) return;
+            
+            this.status[provider] = 'testing';
+            this.messages[provider] = '';
+            
+            try {
+                const response = await fetch('/api/validate-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ provider, api_key: key })
+                });
+                
+                const data = await response.json();
+                
+                if (data.valid) {
+                    this.status[provider] = 'valid';
+                    this.messages[provider] = data.message;
+                } else {
+                    this.status[provider] = 'invalid';
+                    this.messages[provider] = data.message;
+                }
+            } catch (error) {
+                this.status[provider] = 'invalid';
+                this.messages[provider] = 'Error testing key: ' + error.message;
+            }
+        },
+        
+        async testAllKeys() {
+            for (const provider of this.providers) {
+                if (this.keys[provider.id]) {
+                    await this.testKey(provider.id);
+                }
+            }
+        }
+    }
+}
+
+function providerSelector() {
+    return {
+        selected: localStorage.getItem('defaultProvider') || 'openai',
+        providers: [
+            { id: 'openai', name: 'OpenAI', icon: '🟢', defaultModel: 'gpt-5.2-mini' },
+            { id: 'anthropic', name: 'Anthropic', icon: '🟠', defaultModel: 'claude-4.5-sonnet' },
+            { id: 'google', name: 'Google', icon: '🔵', defaultModel: 'gemini-3-flash' },
+            { id: 'xai', name: 'xAI', icon: '⚫', defaultModel: 'grok-4-mini' },
+        ],
+        selectProvider(id) {
+            this.selected = id;
+            localStorage.setItem('defaultProvider', id);
+        }
+    }
+}
+
+function modelSelector() {
+    return {
+        providers: [
+            { id: 'openai', name: 'OpenAI', icon: '🟢', models: ['gpt-5.2', 'gpt-5.2-mini', 'gpt-5.1', 'gpt-5.1-mini', 'gpt-5', 'gpt-4o', 'gpt-4o-mini', 'o3', 'o3-mini', 'o1'] },
+            { id: 'anthropic', name: 'Anthropic', icon: '🟠', models: ['claude-4.5-opus', 'claude-4.5-sonnet', 'claude-4.5-haiku', 'claude-4-opus', 'claude-4-sonnet', 'claude-3.5-sonnet', 'claude-3.5-haiku'] },
+            { id: 'google', name: 'Google', icon: '🔵', models: ['gemini-3-ultra', 'gemini-3-pro', 'gemini-3-flash', 'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2-flash'] },
+            { id: 'xai', name: 'xAI', icon: '⚫', models: ['grok-4', 'grok-4-mini', 'grok-3', 'grok-3-mini', 'grok-3-vision'] },
+        ],
+        getModel(provider) {
+            return localStorage.getItem(`model_${provider}`) || this.providers.find(p => p.id === provider)?.models[0];
+        },
+        setModel(provider, model) {
+            localStorage.setItem(`model_${provider}`, model);
+        }
+    }
+}
+</script>
+{% endblock %}

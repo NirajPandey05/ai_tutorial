@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="p-6">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-white mb-2">🛠️ Interactive Tools</h1>
+        <p class="text-slate-400">Hands-on tools to help you understand and work with LLMs</p>
+    </div>
+    
+    <!-- Tools Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Live Code Sandbox -->
+        <a href="/sandbox" class="block group">
+            <div class="bg-slate-800 rounded-xl p-6 border border-slate-700 hover:border-primary-500 transition-all hover:transform hover:-translate-y-1">
+                <div class="text-4xl mb-4">🐍</div>
+                <h3 class="text-xl font-semibold text-white mb-2 group-hover:text-primary-400">Live Code Sandbox</h3>
+                <p class="text-slate-400 text-sm mb-4">
+                    Run Python code directly in your browser. Practice LLM concepts with mock APIs and real-time execution.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded">Browser-based</span>
+                    <span class="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded">Pyodide</span>
+                    <span class="text-xs px-2 py-1 bg-purple-500/20 text-purple-400 rounded">Monaco Editor</span>
+                </div>
+            </div>
+        </a>
+        
+        <!-- Token Visualizer -->
+        <a href="/tools/token-visualizer" class="block group">
+            <div class="bg-slate-800 rounded-xl p-6 border border-slate-700 hover:border-primary-500 transition-all hover:transform hover:-translate-y-1">
+                <div class="text-4xl mb-4">🔤</div>
+                <h3 class="text-xl font-semibold text-white mb-2 group-hover:text-primary-400">Token Visualizer</h3>
+                <p class="text-slate-400 text-sm mb-4">
+                    See how text is broken into tokens. Compare tokenization across providers and estimate costs.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="text-xs px-2 py-1 bg-amber-500/20 text-amber-400 rounded">Tokenization</span>
+                    <span class="text-xs px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded">Cost Estimation</span>
+                    <span class="text-xs px-2 py-1 bg-cyan-500/20 text-cyan-400 rounded">Multi-Provider</span>
+                </div>
+            </div>
+        </a>
+        
+        <!-- Embedding Playground -->
+        <a href="/tools/embedding-playground" class="block group">
+            <div class="bg-slate-800 rounded-xl p-6 border border-slate-700 hover:border-primary-500 transition-all hover:transform hover:-translate-y-1">
+                <div class="text-4xl mb-4">📊</div>
+                <h3 class="text-xl font-semibold text-white mb-2 group-hover:text-primary-400">Embedding Playground</h3>
+                <p class="text-slate-400 text-sm mb-4">
+                    Visualize text embeddings in 2D space. Explore similarity search and clustering concepts.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="text-xs px-2 py-1 bg-rose-500/20 text-rose-400 rounded">Visualization</span>
+                    <span class="text-xs px-2 py-1 bg-indigo-500/20 text-indigo-400 rounded">Similarity</span>
+                    <span class="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 rounded">Clustering</span>
+                </div>
+            </div>
+        </a>
+        
+        <!-- Provider Comparison -->
+        <a href="/tools/comparison" class="block group">
+            <div class="bg-slate-800 rounded-xl p-6 border border-slate-700 hover:border-primary-500 transition-all hover:transform hover:-translate-y-1">
+                <div class="text-4xl mb-4">⚖️</div>
+                <h3 class="text-xl font-semibold text-white mb-2 group-hover:text-primary-400">Provider Comparison</h3>
+                <p class="text-slate-400 text-sm mb-4">
+                    Compare responses from different LLM providers side-by-side. See differences in style and timing.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded">Side-by-Side</span>
+                    <span class="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded">OpenAI</span>
+                    <span class="text-xs px-2 py-1 bg-amber-500/20 text-amber-400 rounded">Anthropic</span>
+                    <span class="text-xs px-2 py-1 bg-sky-500/20 text-sky-400 rounded">Google</span>
+                </div>
+            </div>
+        </a>
+        
+        <!-- Cost Calculator -->
+        <a href="/tools/cost-calculator" class="block group">
+            <div class="bg-slate-800 rounded-xl p-6 border border-slate-700 hover:border-primary-500 transition-all hover:transform hover:-translate-y-1">
+                <div class="text-4xl mb-4">💰</div>
+                <h3 class="text-xl font-semibold text-white mb-2 group-hover:text-primary-400">Cost Calculator</h3>
+                <p class="text-slate-400 text-sm mb-4">
+                    Estimate and compare costs across LLM providers. Plan your budget with usage-based calculations.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="text-xs px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded">Pricing</span>
+                    <span class="text-xs px-2 py-1 bg-violet-500/20 text-violet-400 rounded">Budget Planning</span>
+                    <span class="text-xs px-2 py-1 bg-pink-500/20 text-pink-400 rounded">Comparison</span>
+                </div>
+            </div>
+        </a>
+        
+        <!-- Coming Soon Placeholder -->
+        <div class="block">
+            <div class="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 opacity-60">
+                <div class="text-4xl mb-4">🚧</div>
+                <h3 class="text-xl font-semibold text-slate-400 mb-2">More Coming Soon</h3>
+                <p class="text-slate-500 text-sm mb-4">
+                    We're building more interactive tools to help you learn AI engineering concepts.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="text-xs px-2 py-1 bg-slate-600/50 text-slate-400 rounded">Prompt Debugger</span>
+                    <span class="text-xs px-2 py-1 bg-slate-600/50 text-slate-400 rounded">RAG Simulator</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Info Section -->
+    <div class="mt-12 bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+        <h2 class="text-xl font-semibold text-white mb-4">💡 About These Tools</h2>
+        <div class="grid md:grid-cols-2 gap-6 text-sm text-slate-400">
+            <div>
+                <h3 class="font-semibold text-slate-300 mb-2">Browser-Based Learning</h3>
+                <p>
+                    All tools run directly in your browser with no server-side processing required. 
+                    This means you can experiment freely without worrying about API costs or rate limits.
+                </p>
+            </div>
+            <div>
+                <h3 class="font-semibold text-slate-300 mb-2">Real-World Concepts</h3>
+                <p>
+                    Each tool is designed to illustrate core AI engineering concepts that you'll use 
+                    when building real applications. The mock data closely mirrors actual API behavior.
+                </p>
+            </div>
+            <div>
+                <h3 class="font-semibold text-slate-300 mb-2">Connect Your APIs</h3>
+                <p>
+                    For the full experience, you can configure your own API keys in the Settings page. 
+                    This enables real API calls for comparison and testing purposes.
+                </p>
+            </div>
+            <div>
+                <h3 class="font-semibold text-slate-300 mb-2">Open Source</h3>
+                <p>
+                    These tools are part of our open-source AI Tutorial project. Feel free to explore 
+                    the code, contribute improvements, or adapt them for your own learning materials.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

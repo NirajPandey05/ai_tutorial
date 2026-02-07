@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}About - AI Engineering Tutorial{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-6 py-12">
+    <h1 class="text-3xl font-bold mb-6">About AI Engineering Tutorial</h1>
+    
+    <div class="prose prose-invert max-w-none">
+        <p class="text-lg text-slate-300 mb-6">
+            AI Engineering Tutorial is a comprehensive, interactive learning platform designed to teach 
+            AI Engineering concepts from fundamentals to advanced topics. Whether you're just getting 
+            started with LLMs or looking to master multi-agent systems, this tutorial has you covered.
+        </p>
+        
+        <h2 class="text-2xl font-semibold mt-8 mb-4">🎯 What You'll Learn</h2>
+        <ul class="space-y-2 text-slate-300">
+            <li>• <strong>LLM Fundamentals</strong> - Understand how large language models work</li>
+            <li>• <strong>Prompt Engineering</strong> - Master the art of crafting effective prompts</li>
+            <li>• <strong>Embeddings & Vector Databases</strong> - Work with semantic representations</li>
+            <li>• <strong>RAG (Retrieval-Augmented Generation)</strong> - Build knowledge-powered AI</li>
+            <li>• <strong>MCP (Model Context Protocol)</strong> - Create interoperable AI tools</li>
+            <li>• <strong>AI Agents</strong> - Develop autonomous AI systems</li>
+            <li>• <strong>Multi-Agent Workflows</strong> - Orchestrate teams of AI agents</li>
+            <li>• <strong>Fine-tuning</strong> - Customize models for your use case</li>
+            <li>• <strong>Self-Hosting</strong> - Run models locally with Ollama, vLLM, and more</li>
+        </ul>
+        
+        <h2 class="text-2xl font-semibold mt-8 mb-4">🔑 Bring Your Own Keys</h2>
+        <p class="text-slate-300 mb-4">
+            This tutorial is designed to work with your own API keys. We support multiple providers:
+        </p>
+        <ul class="space-y-2 text-slate-300">
+            <li>• OpenAI (GPT-4, GPT-3.5)</li>
+            <li>• Anthropic (Claude)</li>
+            <li>• Google (Gemini)</li>
+            <li>• xAI (Grok)</li>
+            <li>• Ollama (local models)</li>
+        </ul>
+        
+        <h2 class="text-2xl font-semibold mt-8 mb-4">🛡️ Privacy First</h2>
+        <p class="text-slate-300">
+            Your API keys are stored locally in your browser and are never sent to our servers. 
+            All API calls are made directly from your browser to the respective providers.
+        </p>
+        
+        <h2 class="text-2xl font-semibold mt-8 mb-4">📖 Open Source</h2>
+        <p class="text-slate-300">
+            This project is open source and contributions are welcome. The codebase is available 
+            on GitHub under the MIT license.
+        </p>
+        
+        <h2 class="text-2xl font-semibold mt-8 mb-4">🛠️ Technology Stack</h2>
+        <ul class="space-y-2 text-slate-300">
+            <li>• <strong>Backend:</strong> FastAPI (Python)</li>
+            <li>• <strong>Frontend:</strong> TailwindCSS, HTMX, Alpine.js</li>
+            <li>• <strong>Package Manager:</strong> UV</li>
+            <li>• <strong>Vector Database:</strong> ChromaDB</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

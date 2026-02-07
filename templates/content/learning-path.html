@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-6 py-8">
+    <!-- Path Header -->
+    <div class="mb-8">
+        <div class="flex items-center space-x-4 mb-4">
+            <span class="text-5xl">{{ learning_path.icon }}</span>
+            <div>
+                <h1 class="text-3xl font-bold text-white">{{ learning_path.title }}</h1>
+                <p class="text-slate-400 mt-1">{{ learning_path.description }}</p>
+            </div>
+        </div>
+        
+        <!-- Path Stats -->
+        <div class="flex items-center space-x-6 mt-4 text-sm text-slate-400">
+            <div class="flex items-center space-x-2">
+                <span>📚</span>
+                <span>{{ path_modules|length }} modules</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span>📄</span>
+                <span>{{ path_content|length }} lessons</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span>⏱️</span>
+                <span>~{{ learning_path.estimated_hours }} hours</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span>🎯</span>
+                <span>{{ learning_path.target_audience }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Learning Outcomes -->
+    {% if learning_path.outcomes %}
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 mb-8">
+        <h2 class="text-xl font-semibold text-white mb-4">What You'll Learn</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {% for outcome in learning_path.outcomes %}
+            <div class="flex items-start space-x-3">
+                <span class="text-green-400 mt-1">✓</span>
+                <span class="text-slate-300">{{ outcome }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Path Progress -->
+    <div class="mb-8" x-data="pathProgress()" x-init="init()">
+        <div class="flex items-center justify-between text-sm mb-2">
+            <span class="text-slate-400">Your Progress</span>
+            <span class="text-white" x-text="completedCount + ' / {{ path_content|length }} (' + progress + '%)'">0 / {{ path_content|length }} (0%)</span>
+        </div>
+        <div class="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
+            <div class="h-full bg-primary-500 transition-all duration-500" :style="'width: ' + progress + '%'"></div>
+        </div>
+        
+        <!-- Start/Continue Path Button -->
+        <div class="mt-4 flex items-center space-x-4">
+            {% if first_content %}
+            <a :href="getNextUrl()"
+               class="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-lg font-medium transition-colors inline-flex items-center space-x-2">
+                <span x-text="completedCount === 0 ? 'Start Learning Path' : (completedCount < {{ path_content|length }} ? 'Continue Learning' : 'Review Path')"></span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </a>
+            {% endif %}
+            
+            <!-- Reset Progress Button -->
+            <button @click="resetProgress()" 
+                    x-show="completedCount > 0"
+                    class="px-4 py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg font-medium transition-colors text-sm">
+                Reset Progress
+            </button>
+        </div>
+    </div>
+    
+    <!-- Module Timeline -->
+    <div class="space-y-0">
+        <h2 class="text-xl font-semibold text-white mb-6">Learning Path</h2>
+        
+        {% for module in path_modules %}
+        <div class="relative flex items-start" x-data="moduleProgress('{{ module.id }}')" x-init="init()">
+            <!-- Timeline Line -->
+            {% if not loop.last %}
+            <div class="absolute left-6 top-12 w-0.5 h-full bg-slate-700" :class="{ 'bg-primary-500': isComplete }"></div>
+            {% endif %}
+            
+            <!-- Module Card -->
+            <div class="flex items-start space-x-4 pb-8 w-full">
+                <!-- Step Number -->
+                <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 z-10 text-lg font-bold"
+                     :class="isComplete ? 'bg-primary-500 text-white' : (inProgress ? 'bg-amber-500 text-white' : 'bg-slate-700 text-slate-400')">
+                    <span x-show="!isComplete">{{ loop.index }}</span>
+                    <span x-show="isComplete">✓</span>
+                </div>
+                
+                <!-- Module Content -->
+                <div class="flex-1 bg-slate-800 border border-slate-700 rounded-xl p-6 hover:border-primary-500/50 transition-colors group"
+                     :class="{ 'border-primary-500/30': isComplete, 'border-amber-500/30': inProgress && !isComplete }">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3 mb-2">
+                                <span class="text-2xl">{{ module.icon }}</span>
+                                <span class="text-xl font-semibold text-white group-hover:text-primary-400 transition-colors">
+                                    {{ module.title }}
+                                </span>
+                            </div>
+                            <p class="text-slate-400 text-sm mb-4">{{ module.description }}</p>
+                            
+                            <div class="flex items-center space-x-4 text-sm text-slate-500">
+                                <span>{{ module.sections|length }} sections</span>
+                                <span>{{ module.total_time }} min</span>
+                                <span class="px-2 py-0.5 rounded text-xs
+                                    {% if module.difficulty.value == 'beginner' %}bg-green-500/20 text-green-400
+                                    {% elif module.difficulty.value == 'intermediate' %}bg-yellow-500/20 text-yellow-400
+                                    {% else %}bg-orange-500/20 text-orange-400{% endif %}">
+                                    {{ module.difficulty.value|capitalize }}
+                                </span>
+                                <span x-show="moduleProgress > 0 && moduleProgress < 100" class="text-amber-400" x-text="moduleProgress + '% done'"></span>
+                            </div>
+                        </div>
+                        
+                        <a :href="getModuleStartUrl('{{ module.id }}')" 
+                           class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg font-medium transition-colors whitespace-nowrap ml-4">
+                            <span x-show="!isComplete && !inProgress">Start</span>
+                            <span x-show="inProgress && !isComplete">Continue</span>
+                            <span x-show="isComplete">Review</span>
+                        </a>
+                    </div>
+                    
+                    <!-- Module Progress Bar -->
+                    <div x-show="moduleProgress > 0" class="mt-4">
+                        <div class="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                            <div class="h-full bg-primary-500 transition-all duration-300" :style="'width: ' + moduleProgress + '%'"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Completion Certificate (Hidden until complete) -->
+    <div class="mt-8" x-data="pathProgress()" x-init="init()">
+        <div x-show="isPathComplete" x-transition class="bg-gradient-to-r from-primary-500/20 to-accent-500/20 border border-primary-500/30 rounded-xl p-8 text-center">
+            <span class="text-5xl mb-4 block">🏆</span>
+            <h2 class="text-2xl font-bold text-white mb-2">Congratulations!</h2>
+            <p class="text-slate-300 mb-4">You've completed the {{ learning_path.title }} learning path!</p>
+            <button class="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-lg font-medium transition-colors">
+                Download Certificate
+            </button>
+        </div>
+    </div>
+    
+    <!-- Other Learning Paths -->
+    {% if all_paths %}
+    <div class="mt-12">
+        <h2 class="text-xl font-semibold text-white mb-4">Other Learning Paths</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for path in all_paths %}
+            {% if path.id != learning_path.id %}
+            <a href="/path/{{ path.id }}" 
+               class="bg-slate-800 border border-slate-700 rounded-lg p-4 hover:border-primary-500/50 transition-colors group">
+                <div class="flex items-center space-x-3">
+                    <span class="text-2xl">{{ path.icon }}</span>
+                    <div>
+                        <div class="text-white font-medium group-hover:text-primary-400 transition-colors">
+                            {{ path.title }}
+                        </div>
+                        <div class="text-sm text-slate-400">{{ path.description|truncate(50) }}</div>
+                    </div>
+                </div>
+            </a>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Path content data from server
+const pathId = '{{ learning_path.id }}';
+const pathContent = {{ path_content | tojson | safe }};
+const pathModules = {{ learning_path.modules | tojson | safe }};
+
+// Path progress tracking
+function pathProgress() {
+    return {
+        completedCount: 0,
+        progress: 0,
+        isPathComplete: false,
+        
+        init() {
+            this.updateProgress();
+            // Listen for progress updates
+            window.addEventListener('progress-updated', () => this.updateProgress());
+        },
+        
+        updateProgress() {
+            const completed = pathContent.filter(item => 
+                ProgressTracker.isComplete(item.id)
+            );
+            this.completedCount = completed.length;
+            this.progress = Math.round((this.completedCount / pathContent.length) * 100);
+            this.isPathComplete = this.completedCount === pathContent.length;
+            
+            // Store path progress
+            localStorage.setItem(`path_${pathId}_progress`, JSON.stringify({
+                completed: completed.map(c => c.id),
+                percentage: this.progress,
+                completedAt: this.isPathComplete ? new Date().toISOString() : null
+            }));
+        },
+        
+        getNextUrl() {
+            // Find first incomplete item
+            for (const item of pathContent) {
+                if (!ProgressTracker.isComplete(item.id)) {
+                    return `/learn/${item.module_id}/${item.section_id}/${item.id}?path=${pathId}`;
+                }
+            }
+            // All complete - go to first item for review
+            const first = pathContent[0];
+            return `/learn/${first.module_id}/${first.section_id}/${first.id}?path=${pathId}`;
+        },
+        
+        resetProgress() {
+            if (confirm('Are you sure you want to reset your progress for this learning path?')) {
+                pathContent.forEach(item => {
+                    ProgressTracker.markIncomplete(item.id);
+                });
+                localStorage.removeItem(`path_${pathId}_progress`);
+                this.updateProgress();
+            }
+        }
+    };
+}
+
+// Module progress within path
+function moduleProgress(moduleId) {
+    return {
+        moduleProgress: 0,
+        isComplete: false,
+        inProgress: false,
+        
+        init() {
+            this.updateProgress();
+            window.addEventListener('progress-updated', () => this.updateProgress());
+        },
+        
+        updateProgress() {
+            const moduleContent = pathContent.filter(item => item.module_id === moduleId);
+            const completed = moduleContent.filter(item => ProgressTracker.isComplete(item.id));
+            
+            this.moduleProgress = moduleContent.length > 0 
+                ? Math.round((completed.length / moduleContent.length) * 100) 
+                : 0;
+            this.isComplete = completed.length === moduleContent.length && moduleContent.length > 0;
+            this.inProgress = completed.length > 0 && !this.isComplete;
+        },
+        
+        getModuleStartUrl(modId) {
+            // Find first incomplete item in this module, or first item if all complete
+            const moduleContent = pathContent.filter(item => item.module_id === modId);
+            
+            for (const item of moduleContent) {
+                if (!ProgressTracker.isComplete(item.id)) {
+                    return `/learn/${item.module_id}/${item.section_id}/${item.id}?path=${pathId}`;
+                }
+            }
+            
+            // All complete - go to first item for review
+            if (moduleContent.length > 0) {
+                const first = moduleContent[0];
+                return `/learn/${first.module_id}/${first.section_id}/${first.id}?path=${pathId}`;
+            }
+            
+            return `/learn/${modId}`;
+        }
+    };
+}
+</script>
+{% endblock %}

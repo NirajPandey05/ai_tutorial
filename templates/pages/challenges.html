@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="p-6">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-white mb-2">💻 Coding Challenges</h1>
+        <p class="text-slate-400">Practice AI engineering concepts with hands-on coding exercises</p>
+    </div>
+    
+    <!-- Filter Tabs -->
+    <div class="flex gap-2 mb-6 flex-wrap">
+        <button onclick="filterChallenges('all')" class="filter-btn active px-4 py-2 rounded-lg bg-primary-500 text-white" data-filter="all">
+            All
+        </button>
+        <button onclick="filterChallenges('easy')" class="filter-btn px-4 py-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600" data-filter="easy">
+            🟢 Easy
+        </button>
+        <button onclick="filterChallenges('medium')" class="filter-btn px-4 py-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600" data-filter="medium">
+            🟡 Medium
+        </button>
+        <button onclick="filterChallenges('hard')" class="filter-btn px-4 py-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600" data-filter="hard">
+            🔴 Hard
+        </button>
+    </div>
+    
+    <!-- Challenges Grid -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="challenges-grid">
+        <!-- Two Sum -->
+        <a href="/challenge/twoSum" class="challenge-card block group" data-difficulty="easy">
+            <div class="bg-slate-800 rounded-xl p-6 border border-slate-700 hover:border-primary-500 transition-all hover:transform hover:-translate-y-1">
+                <div class="flex items-start justify-between mb-4">
+                    <span class="text-3xl">🔢</span>
+                    <span class="px-2 py-1 rounded text-xs font-medium bg-green-500/20 text-green-400">Easy</span>
+                </div>
+                <h3 class="text-lg font-semibold text-white mb-2 group-hover:text-primary-400">Two Sum</h3>
+                <p class="text-slate-400 text-sm mb-4">Find two numbers that add up to a target sum.</p>
+                <div class="flex items-center justify-between text-xs text-slate-500">
+                    <span>4 test cases</span>
+                    <span class="solved-badge hidden px-2 py-1 bg-green-500/20 text-green-400 rounded">✓ Solved</span>
+                </div>
+            </div>
+        </a>
+        
+        <!-- Reverse String -->
+        <a href="/challenge/reverseString" class="challenge-card block group" data-difficulty="easy">
+            <div class="bg-slate-800 rounded-xl p-6 border border-slate-700 hover:border-primary-500 transition-all hover:transform hover:-translate-y-1">
+                <div class="flex items-start justify-between mb-4">
+                    <span class="text-3xl">🔄</span>
+                    <span class="px-2 py-1 rounded text-xs font-medium bg-green-500/20 text-green-400">Easy</span>
+                </div>
+                <h3 class="text-lg font-semibold text-white mb-2 group-hover:text-primary-400">Reverse String</h3>
+                <p class="text-slate-400 text-sm mb-4">Reverse a string without built-in methods.</p>
+                <div class="flex items-center justify-between text-xs text-slate-500">
+                    <span>5 test cases</span>
+                    <span class="solved-badge hidden px-2 py-1 bg-green-500/20 text-green-400 rounded">✓ Solved</span>
+                </div>
+            </div>
+        </a>
+        
+        <!-- Count Tokens -->
+        <a href="/challenge/countTokens" class="challenge-card block group" data-difficulty="easy">
+            <div class="bg-slate-800 rounded-xl p-6 border border-slate-700 hover:border-primary-500 transition-all hover:transform hover:-translate-y-1">
+                <div class="flex items-start justify-between mb-4">
+                    <span class="text-3xl">🔤</span>
+                    <span class="px-2 py-1 rounded text-xs font-medium bg-green-500/20 text-green-400">Easy</span>
+                </div>
+                <h3 class="text-lg font-semibold text-white mb-2 group-hover:text-primary-400">Simple Token Counter</h3>
+                <p class="text-slate-400 text-sm mb-4">Build a basic tokenizer like LLMs use.</p>
+                <div class="flex items-center justify-between text-xs text-slate-500">
+                    <span>5 test cases</span>
+                    <span class="solved-badge hidden px-2 py-1 bg-green-500/20 text-green-400 rounded">✓ Solved</span>
+                </div>
+            </div>
+        </a>
+        
+        <!-- Cosine Similarity -->
+        <a href="/challenge/cosineSimilarity" class="challenge-card block group" data-difficulty="medium">
+            <div class="bg-slate-800 rounded-xl p-6 border border-slate-700 hover:border-primary-500 transition-all hover:transform hover:-translate-y-1">
+                <div class="flex items-start justify-between mb-4">
+                    <span class="text-3xl">📐</span>
+                    <span class="px-2 py-1 rounded text-xs font-medium bg-yellow-500/20 text-yellow-400">Medium</span>
+                </div>
+                <h3 class="text-lg font-semibold text-white mb-2 group-hover:text-primary-400">Cosine Similarity</h3>
+                <p class="text-slate-400 text-sm mb-4">Calculate similarity between embeddings.</p>
+                <div class="flex items-center justify-between text-xs text-slate-500">
+                    <span>5 test cases</span>
+                    <span class="solved-badge hidden px-2 py-1 bg-green-500/20 text-green-400 rounded">✓ Solved</span>
+                </div>
+            </div>
+        </a>
+        
+        <!-- Chunking Strategy (Coming Soon) -->
+        <div class="challenge-card block opacity-60" data-difficulty="medium">
+            <div class="bg-slate-800 rounded-xl p-6 border border-slate-700">
+                <div class="flex items-start justify-between mb-4">
+                    <span class="text-3xl">📄</span>
+                    <span class="px-2 py-1 rounded text-xs font-medium bg-yellow-500/20 text-yellow-400">Medium</span>
+                </div>
+                <h3 class="text-lg font-semibold text-slate-400 mb-2">Document Chunker</h3>
+                <p class="text-slate-500 text-sm mb-4">Implement a document chunking strategy for RAG.</p>
+                <div class="flex items-center justify-between text-xs text-slate-600">
+                    <span>Coming Soon</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Agent Tool Router (Coming Soon) -->
+        <div class="challenge-card block opacity-60" data-difficulty="hard">
+            <div class="bg-slate-800 rounded-xl p-6 border border-slate-700">
+                <div class="flex items-start justify-between mb-4">
+                    <span class="text-3xl">🤖</span>
+                    <span class="px-2 py-1 rounded text-xs font-medium bg-red-500/20 text-red-400">Hard</span>
+                </div>
+                <h3 class="text-lg font-semibold text-slate-400 mb-2">Agent Tool Router</h3>
+                <p class="text-slate-500 text-sm mb-4">Build a tool selection system for AI agents.</p>
+                <div class="flex items-center justify-between text-xs text-slate-600">
+                    <span>Coming Soon</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stats Section -->
+    <div class="mt-12 bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+        <h2 class="text-xl font-semibold text-white mb-4">📊 Your Progress</h2>
+        <div class="grid md:grid-cols-4 gap-6">
+            <div class="text-center">
+                <div class="text-3xl font-bold text-primary-400" id="solved-count">0</div>
+                <div class="text-sm text-slate-400">Solved</div>
+            </div>
+            <div class="text-center">
+                <div class="text-3xl font-bold text-white" id="total-count">4</div>
+                <div class="text-sm text-slate-400">Total</div>
+            </div>
+            <div class="text-center">
+                <div class="text-3xl font-bold text-green-400" id="easy-solved">0/3</div>
+                <div class="text-sm text-slate-400">Easy</div>
+            </div>
+            <div class="text-center">
+                <div class="text-3xl font-bold text-yellow-400" id="medium-solved">0/1</div>
+                <div class="text-sm text-slate-400">Medium</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Filter challenges by difficulty
+function filterChallenges(difficulty) {
+    // Update button styles
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        if (btn.dataset.filter === difficulty) {
+            btn.classList.remove('bg-slate-700', 'text-slate-300');
+            btn.classList.add('bg-primary-500', 'text-white', 'active');
+        } else {
+            btn.classList.add('bg-slate-700', 'text-slate-300');
+            btn.classList.remove('bg-primary-500', 'text-white', 'active');
+        }
+    });
+    
+    // Filter cards
+    document.querySelectorAll('.challenge-card').forEach(card => {
+        if (difficulty === 'all' || card.dataset.difficulty === difficulty) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// Update progress from localStorage
+function updateProgress() {
+    const results = JSON.parse(localStorage.getItem('challengeResults') || '{}');
+    
+    let solvedCount = 0;
+    let easySolved = 0;
+    let mediumSolved = 0;
+    
+    const challengeMap = {
+        'two-sum': 'easy',
+        'reverse-string': 'easy',
+        'count-tokens': 'easy',
+        'cosine-similarity': 'medium'
+    };
+    
+    // Update solved badges
+    document.querySelectorAll('.challenge-card a').forEach(card => {
+        const href = card.getAttribute('href');
+        const challengeType = href?.split('/').pop();
+        const challengeId = {
+            'twoSum': 'two-sum',
+            'reverseString': 'reverse-string',
+            'countTokens': 'count-tokens',
+            'cosineSimilarity': 'cosine-similarity'
+        }[challengeType];
+        
+        if (challengeId && results[challengeId]?.solved) {
+            solvedCount++;
+            const badge = card.querySelector('.solved-badge');
+            if (badge) badge.classList.remove('hidden');
+            
+            if (challengeMap[challengeId] === 'easy') easySolved++;
+            if (challengeMap[challengeId] === 'medium') mediumSolved++;
+        }
+    });
+    
+    // Update stats
+    document.getElementById('solved-count').textContent = solvedCount;
+    document.getElementById('easy-solved').textContent = `${easySolved}/3`;
+    document.getElementById('medium-solved').textContent = `${mediumSolved}/1`;
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', updateProgress);
+</script>
+{% endblock %}

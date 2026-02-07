@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}Glossary - AI Engineering Tutorial{% endblock %}
+
+{% block head %}
+<script src="/static/js/glossary.js" defer></script>
+<style>
+    .letter-nav {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    .glossary-card {
+        transition: all 0.2s ease;
+    }
+    .glossary-card:hover {
+        transform: translateY(-2px);
+    }
+    .category-pill {
+        transition: all 0.2s ease;
+    }
+    .category-pill:hover {
+        transform: scale(1.05);
+    }
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-6 py-12" x-data="glossaryPage()">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold mb-2">📖 AI/ML Glossary</h1>
+        <p class="text-slate-400">Comprehensive reference for AI Engineering terminology with <span class="text-primary-400 font-semibold" x-text="Object.values(groupedTerms).flat().length + '+'"></span> terms.</p>
+    </div>
+    
+    <!-- Search & Filters -->
+    <div class="mb-8 space-y-4">
+        <!-- Search Bar -->
+        <div class="relative">
+            <input 
+                type="text" 
+                placeholder="Search terms, definitions, or related concepts..."
+                class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 pl-12 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                x-model="searchQuery"
+                @input="search($event.target.value)"
+            >
+            <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            <button 
+                x-show="searchQuery" 
+                @click="searchQuery = ''; search('')"
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Category Filters -->
+        <div class="flex flex-wrap gap-2">
+            <button 
+                @click="filterCategory(null)"
+                class="category-pill px-3 py-1.5 rounded-full text-sm font-medium border transition-all"
+                :class="activeCategory === null ? 'bg-primary-500/20 text-primary-400 border-primary-500' : 'bg-slate-800 text-slate-400 border-slate-600 hover:border-slate-500'"
+            >
+                All Terms
+            </button>
+            <template x-for="cat in categories" :key="cat.id">
+                <button 
+                    @click="filterCategory(cat.id)"
+                    class="category-pill px-3 py-1.5 rounded-full text-sm font-medium border transition-all flex items-center gap-1"
+                    :class="activeCategory === cat.id ? getCategoryColor(cat.id) + ' border-opacity-100' : 'bg-slate-800 text-slate-400 border-slate-600 hover:border-slate-500'"
+                >
+                    <span x-text="cat.icon"></span>
+                    <span x-text="cat.name"></span>
+                    <span class="text-xs opacity-60" x-text="'(' + cat.count + ')'"></span>
+                </button>
+            </template>
+        </div>
+    </div>
+    
+    <!-- Letter Navigation -->
+    <div class="letter-nav bg-slate-900/95 backdrop-blur-sm py-3 mb-6 -mx-6 px-6 border-b border-slate-700">
+        <div class="flex flex-wrap gap-1 justify-center">
+            <!-- All button -->
+            <button 
+                @click="filterByLetter(null)"
+                class="px-3 h-8 rounded text-sm font-medium transition-colors"
+                :class="activeLetter === null ? 'bg-primary-500 text-white' : 'bg-slate-800 text-white hover:bg-primary-500/50'"
+            >All</button>
+            <template x-for="letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')" :key="letter">
+                <button 
+                    @click="filterByLetter(letter)"
+                    class="w-8 h-8 rounded text-sm font-medium transition-colors"
+                    :class="activeLetter === letter ? 'bg-primary-500 text-white' : (getAllLetters().includes(letter) ? 'bg-slate-800 text-white hover:bg-primary-500/50' : 'text-slate-600 cursor-not-allowed')"
+                    :disabled="!getAllLetters().includes(letter)"
+                    x-text="letter"
+                ></button>
+            </template>
+        </div>
+    </div>
+    
+    <!-- Results Count -->
+    <div class="mb-6 text-sm text-slate-400">
+        <span x-show="searchQuery || activeCategory || activeLetter">
+            Showing <span class="text-white font-medium" x-text="Object.values(groupedTerms).flat().length"></span> terms
+            <span x-show="searchQuery"> matching "<span class="text-primary-400" x-text="searchQuery"></span>"</span>
+            <span x-show="activeCategory"> in <span class="text-primary-400" x-text="getCategoryInfo(activeCategory).name"></span></span>
+            <span x-show="activeLetter"> starting with "<span class="text-primary-400" x-text="activeLetter"></span>"</span>
+        </span>
+    </div>
+    
+    <!-- Glossary Terms by Letter -->
+    <div class="space-y-8">
+        <template x-for="letter in getLetters()" :key="letter">
+            <div :id="'letter-' + letter">
+                <!-- Letter Header -->
+                <div class="flex items-center gap-4 mb-4">
+                    <span class="text-4xl font-bold text-primary-500" x-text="letter"></span>
+                    <div class="flex-1 h-px bg-slate-700"></div>
+                    <span class="text-sm text-slate-500" x-text="groupedTerms[letter].length + ' terms'"></span>
+                </div>
+                
+                <!-- Terms Grid -->
+                <div class="grid md:grid-cols-2 gap-4">
+                    <template x-for="term in groupedTerms[letter]" :key="term.term">
+                        <div 
+                            class="glossary-card bg-slate-800 rounded-lg p-4 border border-slate-700 hover:border-primary-500/50 cursor-pointer"
+                            @click="openTerm(term)"
+                        >
+                            <div class="flex items-start justify-between mb-2">
+                                <h3 class="font-semibold text-lg" x-text="term.term"></h3>
+                                <span 
+                                    class="text-xs px-2 py-1 rounded-full border flex-shrink-0 ml-2"
+                                    :class="getCategoryColor(term.category)"
+                                    x-text="getCategoryInfo(term.category).icon + ' ' + getCategoryInfo(term.category).name"
+                                ></span>
+                            </div>
+                            <p class="text-slate-400 text-sm line-clamp-2" x-text="term.definition"></p>
+                            <div class="mt-3 flex flex-wrap gap-1">
+                                <template x-for="related in term.relatedTerms.slice(0, 3)" :key="related">
+                                    <span class="text-xs px-2 py-0.5 bg-slate-700 rounded text-slate-400" x-text="related"></span>
+                                </template>
+                                <span x-show="term.relatedTerms.length > 3" class="text-xs text-slate-500" x-text="'+' + (term.relatedTerms.length - 3) + ' more'"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </template>
+    </div>
+    
+    <!-- Empty State -->
+    <div x-show="getLetters().length === 0" class="text-center py-16">
+        <div class="text-6xl mb-4">🔍</div>
+        <h3 class="text-xl font-semibold mb-2">No terms found</h3>
+        <p class="text-slate-400 mb-4">Try adjusting your search or filter criteria</p>
+        <button 
+            @click="clearAllFilters()"
+            class="px-4 py-2 bg-primary-500 rounded-lg hover:bg-primary-600 transition-colors"
+        >
+            Clear Filters
+        </button>
+    </div>
+    
+    <!-- Term Detail Modal -->
+    <div 
+        x-show="showModal" 
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        @click.self="closeModal()"
+        @keydown.escape.window="closeModal()"
+        style="display: none;"
+    >
+        <div 
+            x-show="showModal"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95"
+            class="bg-slate-800 rounded-xl border border-slate-700 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+        >
+            <template x-if="selectedTerm">
+                <div>
+                    <!-- Modal Header -->
+                    <div class="sticky top-0 bg-slate-800 border-b border-slate-700 p-6 flex items-start justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold" x-text="selectedTerm.term"></h2>
+                            <span 
+                                class="inline-flex items-center gap-1 text-sm px-3 py-1 rounded-full border mt-2"
+                                :class="getCategoryColor(selectedTerm.category)"
+                            >
+                                <span x-text="getCategoryInfo(selectedTerm.category).icon"></span>
+                                <span x-text="getCategoryInfo(selectedTerm.category).name"></span>
+                            </span>
+                        </div>
+                        <button @click="closeModal()" class="text-slate-400 hover:text-white p-2">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- Modal Content -->
+                    <div class="p-6 space-y-6">
+                        <!-- Definition -->
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Definition</h3>
+                            <p class="text-lg leading-relaxed" x-text="selectedTerm.definition"></p>
+                        </div>
+                        
+                        <!-- Related Terms -->
+                        <div x-show="selectedTerm.relatedTerms && selectedTerm.relatedTerms.length > 0">
+                            <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Related Terms</h3>
+                            <div class="flex flex-wrap gap-2">
+                                <template x-for="related in selectedTerm.relatedTerms" :key="related">
+                                    <button 
+                                        @click="let term = glossarySystem.getTerm(related); if(term) openTerm(term); else { closeModal(); searchQuery = related; search(related); }"
+                                        class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm transition-colors"
+                                        x-text="related"
+                                    ></button>
+                                </template>
+                            </div>
+                        </div>
+                        
+                        <!-- Learn More -->
+                        <div x-show="selectedTerm.seeAlso && selectedTerm.seeAlso.length > 0">
+                            <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Learn More</h3>
+                            <div class="space-y-2">
+                                <template x-for="link in selectedTerm.seeAlso" :key="link">
+                                    <a 
+                                        :href="link" 
+                                        class="flex items-center gap-2 px-4 py-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition-colors group"
+                                    >
+                                        <span class="text-primary-400">📚</span>
+                                        <span class="flex-1 capitalize" x-text="link.replace('/learn/', '').replace(/-/g, ' ').replace(/\//g, ' › ')"></span>
+                                        <svg class="w-5 h-5 text-slate-400 group-hover:text-primary-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                    </a>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+</div>
+{% endblock %}

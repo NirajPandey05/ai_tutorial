@@ -1,0 +1,448 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    /* Token visualizer styles */
+    .token-input {
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+    
+    .token-display {
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        font-size: 14px;
+        line-height: 2;
+        word-break: break-all;
+    }
+    
+    .token {
+        display: inline;
+        padding: 2px 4px;
+        margin: 1px;
+        border-radius: 3px;
+        border: 1px solid;
+        white-space: pre-wrap;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+    
+    .stat-card {
+        background: #1e293b;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #38bdf8;
+    }
+    
+    .stat-label {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .cost-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    .cost-badge.input {
+        background: #166534;
+        color: #86efac;
+    }
+    
+    .cost-badge.output {
+        background: #7c2d12;
+        color: #fed7aa;
+    }
+    
+    .context-bar {
+        height: 8px;
+        border-radius: 4px;
+        background: #334155;
+        overflow: hidden;
+    }
+    
+    .context-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+    
+    .provider-comparison {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+    
+    .provider-card {
+        background: #1e293b;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        border: 1px solid #334155;
+    }
+    
+    .provider-card:hover {
+        border-color: #38bdf8;
+    }
+    
+    /* Token legend */
+    .token-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #334155;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.75rem;
+        color: #94a3b8;
+    }
+    
+    .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="p-6" x-data="tokenVisualizerApp()" x-init="init()">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-white flex items-center gap-3">
+            <span>🔤</span>
+            Token Visualizer
+        </h1>
+        <p class="text-slate-400 mt-1">Visualize how LLMs tokenize text and estimate costs</p>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Input Section -->
+        <div class="space-y-4">
+            <!-- Provider & Model Selection -->
+            <div class="flex gap-4">
+                <div class="flex-1">
+                    <label class="block text-sm text-slate-400 mb-1">Provider</label>
+                    <select x-model="provider" @change="updateAnalysis()" 
+                            class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary-500">
+                        <template x-for="p in providers" :key="p">
+                            <option :value="p" x-text="formatProvider(p)"></option>
+                        </template>
+                    </select>
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm text-slate-400 mb-1">Model</label>
+                    <select x-model="model" @change="updateAnalysis()"
+                            class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary-500">
+                        <template x-for="m in models" :key="m">
+                            <option :value="m" x-text="m"></option>
+                        </template>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Text Input -->
+            <div>
+                <label class="block text-sm text-slate-400 mb-1">Input Text</label>
+                <textarea 
+                    x-model="inputText"
+                    @input="debouncedUpdate()"
+                    class="token-input w-full h-64 bg-slate-900 border border-slate-700 rounded-lg p-4 text-white resize-none focus:outline-none focus:border-primary-500"
+                    placeholder="Enter text to tokenize..."
+                ></textarea>
+            </div>
+            
+            <!-- Quick Examples -->
+            <div class="flex flex-wrap gap-2">
+                <span class="text-sm text-slate-500">Try:</span>
+                <button @click="loadExample('hello')" class="text-xs px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300">Hello World</button>
+                <button @click="loadExample('code')" class="text-xs px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300">Python Code</button>
+                <button @click="loadExample('json')" class="text-xs px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300">JSON Data</button>
+                <button @click="loadExample('prompt')" class="text-xs px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300">System Prompt</button>
+            </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div class="space-y-4">
+            <!-- Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" x-text="analysis.tokenCount"></div>
+                    <div class="stat-label">Tokens</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" x-text="analysis.charCount"></div>
+                    <div class="stat-label">Characters</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" x-text="analysis.wordCount"></div>
+                    <div class="stat-label">Words</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" x-text="analysis.charsPerToken"></div>
+                    <div class="stat-label">Chars/Token</div>
+                </div>
+            </div>
+            
+            <!-- Cost Estimates -->
+            <div class="bg-slate-800 rounded-lg p-4">
+                <h3 class="text-sm font-semibold text-slate-300 mb-3">Cost Estimate</h3>
+                <div class="flex items-center gap-4">
+                    <div class="flex-1">
+                        <span class="text-xs text-slate-500">As Input</span>
+                        <div class="cost-badge input mt-1" x-text="formatCost(analysis.inputCost)"></div>
+                    </div>
+                    <div class="flex-1">
+                        <span class="text-xs text-slate-500">As Output</span>
+                        <div class="cost-badge output mt-1" x-text="formatCost(analysis.outputCost)"></div>
+                    </div>
+                    <div class="flex-1">
+                        <span class="text-xs text-slate-500">1000 requests</span>
+                        <div class="text-lg font-bold text-white mt-1" x-text="formatCost(analysis.inputCost * 1000)"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Context Window Usage -->
+            <div class="bg-slate-800 rounded-lg p-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-sm font-semibold text-slate-300">Context Window Usage</h3>
+                    <span class="text-xs text-slate-500" x-text="contextUsage.used.toLocaleString() + ' / ' + contextUsage.total.toLocaleString() + ' tokens'"></span>
+                </div>
+                <div class="context-bar">
+                    <div class="context-bar-fill" 
+                         :style="{ width: Math.min(contextUsage.percentage, 100) + '%', background: getContextColor(contextUsage.percentage) }">
+                    </div>
+                </div>
+                <div class="flex justify-between mt-2 text-xs text-slate-500">
+                    <span x-text="contextUsage.percentage + '% used'"></span>
+                    <span x-text="contextUsage.remaining.toLocaleString() + ' remaining'"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Token Visualization -->
+    <div class="mt-6 bg-slate-800 rounded-lg p-4">
+        <h3 class="text-sm font-semibold text-slate-300 mb-3">Token Visualization</h3>
+        <div class="token-display bg-slate-900 rounded-lg p-4 min-h-[100px] max-h-[300px] overflow-y-auto" 
+             x-html="tokenHtml || '<span class=\'text-slate-500\'>Tokens will appear here...</span>'">
+        </div>
+        
+        <div class="token-legend">
+            <span class="text-xs text-slate-500">Each colored span is a token. Hover for details.</span>
+        </div>
+    </div>
+    
+    <!-- Provider Comparison -->
+    <div class="mt-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-white">Provider Comparison</h3>
+            <button @click="showComparison = !showComparison" 
+                    class="text-sm text-primary-400 hover:text-primary-300">
+                <span x-text="showComparison ? 'Hide' : 'Show'"></span> Comparison
+            </button>
+        </div>
+        
+        <div x-show="showComparison" x-collapse class="provider-comparison">
+            <template x-for="(data, providerKey) in comparison" :key="providerKey">
+                <div class="provider-card">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-semibold text-white" x-text="formatProvider(providerKey)"></h4>
+                        <span class="text-2xl font-bold text-primary-400" x-text="data.tokenCount"></span>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between text-slate-400">
+                            <span>Input Cost:</span>
+                            <span class="text-green-400" x-text="formatCost(data.inputCost)"></span>
+                        </div>
+                        <div class="flex justify-between text-slate-400">
+                            <span>Output Cost:</span>
+                            <span class="text-orange-400" x-text="formatCost(data.outputCost)"></span>
+                        </div>
+                        <div class="flex justify-between text-slate-400">
+                            <span>Chars/Token:</span>
+                            <span x-text="data.charsPerToken"></span>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+    
+    <!-- Educational Info -->
+    <div class="mt-6 bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+        <h3 class="text-sm font-semibold text-slate-300 mb-2">💡 About Tokenization</h3>
+        <div class="text-sm text-slate-400 space-y-2">
+            <p>
+                <strong>Tokens</strong> are the basic units LLMs process. A token can be a word, part of a word, 
+                or punctuation. English text averages about 4 characters per token.
+            </p>
+            <p>
+                <strong>Why it matters:</strong> API costs are based on tokens, and context windows (how much 
+                text the model can process) are measured in tokens.
+            </p>
+            <p>
+                <strong>Note:</strong> This visualizer uses approximations. Actual tokenization varies by provider 
+                and uses specialized tokenizers like tiktoken (OpenAI) or SentencePiece (Google).
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/token-visualizer.js"></script>
+<script>
+function tokenVisualizerApp() {
+    return {
+        visualizer: null,
+        inputText: '',
+        provider: 'openai',
+        model: 'gpt-4o',
+        providers: [],
+        models: [],
+        analysis: {
+            tokenCount: 0,
+            charCount: 0,
+            wordCount: 0,
+            charsPerToken: 0,
+            inputCost: 0,
+            outputCost: 0
+        },
+        contextUsage: {
+            used: 0,
+            total: 128000,
+            percentage: '0',
+            remaining: 128000
+        },
+        tokenHtml: '',
+        comparison: {},
+        showComparison: false,
+        debounceTimer: null,
+        
+        init() {
+            this.visualizer = new TokenVisualizer();
+            this.providers = this.visualizer.getProviders();
+            this.models = this.visualizer.getModels(this.provider);
+            
+            // Load example on start
+            this.loadExample('prompt');
+        },
+        
+        updateAnalysis() {
+            // Update models when provider changes
+            this.models = this.visualizer.getModels(this.provider);
+            if (!this.models.includes(this.model)) {
+                this.model = this.models[0];
+            }
+            
+            // Run analysis
+            this.analysis = this.visualizer.analyze(this.inputText, this.provider, this.model);
+            
+            // Token visualization
+            this.tokenHtml = this.visualizer.visualize(this.inputText, this.provider);
+            
+            // Context usage
+            const contextWindow = getContextWindow(this.provider, this.model);
+            this.contextUsage = this.visualizer.contextUsage(this.analysis.tokenCount, contextWindow);
+            
+            // Provider comparison
+            this.comparison = this.visualizer.compareProviders(this.inputText);
+        },
+        
+        debouncedUpdate() {
+            if (this.debounceTimer) {
+                clearTimeout(this.debounceTimer);
+            }
+            this.debounceTimer = setTimeout(() => {
+                this.updateAnalysis();
+            }, 200);
+        },
+        
+        formatProvider(provider) {
+            const names = {
+                'openai': 'OpenAI',
+                'anthropic': 'Anthropic',
+                'google': 'Google',
+                'xai': 'xAI'
+            };
+            return names[provider] || provider;
+        },
+        
+        formatCost(cost) {
+            return this.visualizer.formatCost(cost);
+        },
+        
+        getContextColor(percentage) {
+            if (percentage < 50) return '#22c55e';
+            if (percentage < 80) return '#eab308';
+            return '#ef4444';
+        },
+        
+        loadExample(type) {
+            const examples = {
+                'hello': 'Hello, world! This is a simple test of the tokenizer.',
+                
+                'code': `def fibonacci(n):
+    """Calculate the nth Fibonacci number."""
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+# Calculate first 10 Fibonacci numbers
+for i in range(10):
+    print(f"F({i}) = {fibonacci(i)}")`,
+                
+                'json': `{
+  "user": {
+    "id": 12345,
+    "name": "John Doe",
+    "email": "john@example.com",
+    "preferences": {
+      "theme": "dark",
+      "notifications": true
+    }
+  },
+  "items": ["apple", "banana", "cherry"]
+}`,
+                
+                'prompt': `You are an expert AI assistant specialized in software development. Your role is to help users with coding questions, debugging, and best practices.
+
+When responding:
+1. Be concise but thorough
+2. Provide code examples when helpful
+3. Explain your reasoning
+4. Suggest improvements and alternatives
+
+Always prioritize security, readability, and maintainability in your recommendations.`
+            };
+            
+            this.inputText = examples[type] || '';
+            this.updateAnalysis();
+        }
+    };
+}
+</script>
+{% endblock %}

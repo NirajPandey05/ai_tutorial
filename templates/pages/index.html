@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-6 py-12">
+    <!-- Hero Section -->
+    <div class="text-center mb-16">
+        <h1 class="text-5xl font-bold mb-6 bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
+            AI Engineering Tutorial
+        </h1>
+        <p class="text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
+            Master AI Engineering from fundamentals to production. Learn LLMs, RAG, Agents, MCP, 
+            Fine-tuning, and more with hands-on labs using your own API keys.
+        </p>
+        <div class="flex justify-center gap-4">
+            <a href="/learning-paths" class="px-6 py-3 bg-primary-600 hover:bg-primary-700 rounded-lg font-semibold transition-colors">
+                Start Learning
+            </a>
+            <a href="/settings" class="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg font-semibold transition-colors">
+                Configure API Keys
+            </a>
+        </div>
+    </div>
+    
+    <!-- Learning Paths Preview -->
+    <section class="mb-16">
+        <h2 class="text-2xl font-bold mb-6">🎯 Learning Paths</h2>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Quick Start -->
+            <a href="/path/quick-start" class="bg-slate-800 rounded-xl p-6 border border-slate-700 hover:border-primary-500 transition-colors block group">
+                <div class="text-3xl mb-3">🚀</div>
+                <h3 class="text-lg font-semibold mb-2 group-hover:text-primary-400">Quick Start</h3>
+                <p class="text-slate-400 text-sm mb-3">Get started with LLMs in 2 hours</p>
+                <div class="flex items-center text-sm text-slate-500">
+                    <span>⏱️ 2 hours</span>
+                    <span class="mx-2">•</span>
+                    <span>Beginner</span>
+                </div>
+            </a>
+            
+            <!-- RAG Engineer -->
+            <a href="/path/rag-engineer" class="bg-slate-800 rounded-xl p-6 border border-slate-700 hover:border-primary-500 transition-colors block group">
+                <div class="text-3xl mb-3">📚</div>
+                <h3 class="text-lg font-semibold mb-2 group-hover:text-primary-400">RAG Engineer</h3>
+                <p class="text-slate-400 text-sm mb-3">Build knowledge-based AI applications</p>
+                <div class="flex items-center text-sm text-slate-500">
+                    <span>⏱️ 8 hours</span>
+                    <span class="mx-2">•</span>
+                    <span>Intermediate</span>
+                </div>
+            </a>
+            
+            <!-- Agent Developer -->
+            <a href="/path/agent-developer" class="bg-slate-800 rounded-xl p-6 border border-slate-700 hover:border-primary-500 transition-colors block group">
+                <div class="text-3xl mb-3">🤖</div>
+                <h3 class="text-lg font-semibold mb-2 group-hover:text-primary-400">Agent Developer</h3>
+                <p class="text-slate-400 text-sm mb-3">Create autonomous AI agents</p>
+                <div class="flex items-center text-sm text-slate-500">
+                    <span>⏱️ 10 hours</span>
+                    <span class="mx-2">•</span>
+                    <span>Advanced</span>
+                </div>
+            </a>
+            
+            <!-- Self-Hosting -->
+            <a href="/learn/self-hosting" class="bg-slate-800 rounded-xl p-6 border border-slate-700 hover:border-primary-500 transition-colors block group">
+                <div class="text-3xl mb-3">🏠</div>
+                <h3 class="text-lg font-semibold mb-2 group-hover:text-primary-400">Self-Hosting</h3>
+                <p class="text-slate-400 text-sm mb-3">Run LLMs locally for privacy & cost</p>
+                <div class="flex items-center text-sm text-slate-500">
+                    <span>⏱️ 6 hours</span>
+                    <span class="mx-2">•</span>
+                    <span>Intermediate</span>
+                </div>
+            </a>
+            
+            <!-- Fine-tuning -->
+            <a href="/learn/fine-tuning" class="bg-slate-800 rounded-xl p-6 border border-slate-700 hover:border-primary-500 transition-colors block group">
+                <div class="text-3xl mb-3">🔧</div>
+                <h3 class="text-lg font-semibold mb-2 group-hover:text-primary-400">Fine-tuning Expert</h3>
+                <p class="text-slate-400 text-sm mb-3">Customize models for your domain</p>
+                <div class="flex items-center text-sm text-slate-500">
+                    <span>⏱️ 8 hours</span>
+                    <span class="mx-2">•</span>
+                    <span>Advanced</span>
+                </div>
+            </a>
+            
+            <!-- Complete -->
+            <a href="/path/complete" class="bg-slate-800 rounded-xl p-6 border border-slate-700 hover:border-accent-500 transition-colors block group">
+                <div class="text-3xl mb-3">🎓</div>
+                <h3 class="text-lg font-semibold mb-2 group-hover:text-accent-400">Complete AI Engineer</h3>
+                <p class="text-slate-400 text-sm mb-3">Master all concepts comprehensively</p>
+                <div class="flex items-center text-sm text-slate-500">
+                    <span>⏱️ 40+ hours</span>
+                    <span class="mx-2">•</span>
+                    <span>All Levels</span>
+                </div>
+            </a>
+        </div>
+    </section>
+    
+    <!-- Interactive Tools -->
+    <section class="mb-16">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold">🛠️ Interactive Tools</h2>
+            <a href="/tools" class="text-primary-400 hover:text-primary-300 text-sm">View All →</a>
+        </div>
+        <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <!-- Live Code Sandbox -->
+            <a href="/sandbox" class="bg-slate-800 rounded-xl p-5 border border-slate-700 hover:border-primary-500 transition-all hover:transform hover:-translate-y-1 group">
+                <div class="text-3xl mb-3">🐍</div>
+                <h3 class="font-semibold mb-1 group-hover:text-primary-400">Code Sandbox</h3>
+                <p class="text-slate-400 text-xs">Run Python in browser</p>
+            </a>
+            
+            <!-- Token Visualizer -->
+            <a href="/tools/token-visualizer" class="bg-slate-800 rounded-xl p-5 border border-slate-700 hover:border-primary-500 transition-all hover:transform hover:-translate-y-1 group">
+                <div class="text-3xl mb-3">🔤</div>
+                <h3 class="font-semibold mb-1 group-hover:text-primary-400">Token Visualizer</h3>
+                <p class="text-slate-400 text-xs">See tokenization live</p>
+            </a>
+            
+            <!-- Embedding Playground -->
+            <a href="/tools/embedding-playground" class="bg-slate-800 rounded-xl p-5 border border-slate-700 hover:border-primary-500 transition-all hover:transform hover:-translate-y-1 group">
+                <div class="text-3xl mb-3">📊</div>
+                <h3 class="font-semibold mb-1 group-hover:text-primary-400">Embeddings</h3>
+                <p class="text-slate-400 text-xs">Visualize vectors</p>
+            </a>
+            
+            <!-- Provider Comparison -->
+            <a href="/tools/comparison" class="bg-slate-800 rounded-xl p-5 border border-slate-700 hover:border-primary-500 transition-all hover:transform hover:-translate-y-1 group">
+                <div class="text-3xl mb-3">⚖️</div>
+                <h3 class="font-semibold mb-1 group-hover:text-primary-400">Compare LLMs</h3>
+                <p class="text-slate-400 text-xs">Side-by-side responses</p>
+            </a>
+            
+            <!-- Cost Calculator -->
+            <a href="/tools/cost-calculator" class="bg-slate-800 rounded-xl p-5 border border-slate-700 hover:border-primary-500 transition-all hover:transform hover:-translate-y-1 group">
+                <div class="text-3xl mb-3">💰</div>
+                <h3 class="font-semibold mb-1 group-hover:text-primary-400">Cost Calculator</h3>
+                <p class="text-slate-400 text-xs">Estimate API costs</p>
+            </a>
+        </div>
+    </section>
+    
+    <!-- Core Concepts - Dynamic from Registry -->
+    <section class="mb-16">
+        <h2 class="text-2xl font-bold mb-6">📖 Core Modules</h2>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% if all_modules %}
+            {% for module in all_modules %}
+            <a href="/learn/{{ module.id }}" class="bg-slate-800 rounded-lg p-4 border border-slate-700 hover:border-primary-500 transition-colors group">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <span class="text-2xl">{{ module.icon }}</span>
+                        <h3 class="font-semibold mt-2 group-hover:text-primary-400">{{ module.title }}</h3>
+                        <p class="text-sm text-slate-400">{{ module.description|truncate(60) }}</p>
+                    </div>
+                    <span class="px-2 py-1 rounded text-xs
+                        {% if module.difficulty.value == 'beginner' %}bg-green-500/20 text-green-400
+                        {% elif module.difficulty.value == 'intermediate' %}bg-yellow-500/20 text-yellow-400
+                        {% else %}bg-orange-500/20 text-orange-400{% endif %}">
+                        {{ module.difficulty.value|capitalize }}
+                    </span>
+                </div>
+                <div class="mt-3 flex items-center text-xs text-slate-500">
+                    <span>{{ module.sections|length }} sections</span>
+                    <span class="mx-2">•</span>
+                    <span>{{ module.total_time }} min</span>
+                </div>
+            </a>
+            {% endfor %}
+            {% else %}
+            <a href="/learn/llm-fundamentals" class="bg-slate-800 rounded-lg p-4 border border-slate-700 hover:border-primary-500 transition-colors group">
+                <span class="text-2xl">🧠</span>
+                <h3 class="font-semibold mt-2 group-hover:text-primary-400">LLM Fundamentals</h3>
+                <p class="text-sm text-slate-400">Prompts, tokens, parameters</p>
+            </a>
+            
+            <a href="/learn/embeddings-vectors" class="bg-slate-800 rounded-lg p-4 border border-slate-700 hover:border-primary-500 transition-colors group">
+                <span class="text-2xl">🔢</span>
+                <h3 class="font-semibold mt-2 group-hover:text-primary-400">Embeddings & Vectors</h3>
+                <p class="text-sm text-slate-400">Vector representations</p>
+            </a>
+            
+            <a href="/learn/rag" class="bg-slate-800 rounded-lg p-4 border border-slate-700 hover:border-primary-500 transition-colors group">
+                <span class="text-2xl">📚</span>
+                <h3 class="font-semibold mt-2 group-hover:text-primary-400">RAG</h3>
+                <p class="text-sm text-slate-400">Retrieval-augmented generation</p>
+            </a>
+            
+            <a href="/learn/mcp" class="bg-slate-800 rounded-lg p-4 border border-slate-700 hover:border-primary-500 transition-colors group">
+                <span class="text-2xl">🔌</span>
+                <h3 class="font-semibold mt-2 group-hover:text-primary-400">MCP</h3>
+                <p class="text-sm text-slate-400">Model Context Protocol</p>
+            </a>
+            
+            <a href="/learn/agents" class="bg-slate-800 rounded-lg p-4 border border-slate-700 hover:border-primary-500 transition-colors group">
+                <span class="text-2xl">🤖</span>
+                <h3 class="font-semibold mt-2 group-hover:text-primary-400">AI Agents</h3>
+                <p class="text-sm text-slate-400">Autonomous AI systems</p>
+            </a>
+            
+            <a href="/learn/multi-agents" class="bg-slate-800 rounded-lg p-4 border border-slate-700 hover:border-primary-500 transition-colors group">
+                <span class="text-2xl">👥</span>
+                <h3 class="font-semibold mt-2 group-hover:text-primary-400">Multi-Agent</h3>
+                <p class="text-sm text-slate-400">Agent orchestration</p>
+            </a>
+            {% endif %}
+        </div>
+    </section>
+    
+    <!-- Assessment & Gamification -->
+    <section class="mb-16">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold">🏆 Assessment & Gamification</h2>
+            <a href="/achievements" class="text-primary-400 hover:text-primary-300 text-sm">View All Achievements →</a>
+        </div>
+        <div class="grid md:grid-cols-3 gap-6">
+            <!-- Quizzes -->
+            <a href="/quizzes" class="bg-gradient-to-br from-purple-900/50 to-slate-800 rounded-xl p-6 border border-purple-500/30 hover:border-purple-500 transition-all hover:transform hover:-translate-y-1 group">
+                <div class="text-4xl mb-3">📝</div>
+                <h3 class="font-semibold text-lg group-hover:text-purple-400">Knowledge Quizzes</h3>
+                <p class="text-slate-400 text-sm mt-2">Test your understanding with multiple question types</p>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <span class="px-2 py-1 bg-slate-700/50 rounded text-xs">Multiple Choice</span>
+                    <span class="px-2 py-1 bg-slate-700/50 rounded text-xs">True/False</span>
+                    <span class="px-2 py-1 bg-slate-700/50 rounded text-xs">Fill-in-blank</span>
+                </div>
+            </a>
+            
+            <!-- Coding Challenges -->
+            <a href="/challenges" class="bg-gradient-to-br from-green-900/50 to-slate-800 rounded-xl p-6 border border-green-500/30 hover:border-green-500 transition-all hover:transform hover:-translate-y-1 group">
+                <div class="text-4xl mb-3">💻</div>
+                <h3 class="font-semibold text-lg group-hover:text-green-400">Coding Challenges</h3>
+                <p class="text-slate-400 text-sm mt-2">Auto-graded exercises with real-time feedback</p>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <span class="px-2 py-1 bg-slate-700/50 rounded text-xs">Pyodide</span>
+                    <span class="px-2 py-1 bg-slate-700/50 rounded text-xs">Test Cases</span>
+                    <span class="px-2 py-1 bg-slate-700/50 rounded text-xs">Hints</span>
+                </div>
+            </a>
+            
+            <!-- Achievements -->
+            <a href="/achievements" class="bg-gradient-to-br from-yellow-900/50 to-slate-800 rounded-xl p-6 border border-yellow-500/30 hover:border-yellow-500 transition-all hover:transform hover:-translate-y-1 group">
+                <div class="text-4xl mb-3">🏅</div>
+                <h3 class="font-semibold text-lg group-hover:text-yellow-400">Achievements & Badges</h3>
+                <p class="text-slate-400 text-sm mt-2">Earn badges, track streaks, level up your skills</p>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <span class="px-2 py-1 bg-slate-700/50 rounded text-xs">20+ Badges</span>
+                    <span class="px-2 py-1 bg-slate-700/50 rounded text-xs">Skill Tree</span>
+                    <span class="px-2 py-1 bg-slate-700/50 rounded text-xs">Streaks</span>
+                </div>
+            </a>
+        </div>
+    </section>
+    
+    <!-- Features -->
+    <section class="mb-16">
+        <h2 class="text-2xl font-bold mb-6">✨ Features</h2>
+        <div class="grid md:grid-cols-3 gap-6">
+            <div class="text-center">
+                <div class="text-4xl mb-3">🔑</div>
+                <h3 class="font-semibold mb-2">Bring Your Own Keys</h3>
+                <p class="text-slate-400 text-sm">Use OpenAI, Claude, Gemini, or Grok with your own API keys</p>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl mb-3">🧪</div>
+                <h3 class="font-semibold mb-2">Hands-on Labs</h3>
+                <p class="text-slate-400 text-sm">Interactive coding exercises for every concept</p>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl mb-3">🏆</div>
+                <h3 class="font-semibold mb-2">Progress Tracking</h3>
+                <p class="text-slate-400 text-sm">Track your progress and earn certificates</p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Supported Providers -->
+    <section>
+        <h2 class="text-2xl font-bold mb-6">🔌 Supported LLM Providers</h2>
+        <div class="flex flex-wrap justify-center gap-8">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-slate-800 rounded-xl flex items-center justify-center mb-2 border border-slate-700">
+                    <span class="text-2xl">🟢</span>
+                </div>
+                <span class="text-sm text-slate-400">OpenAI</span>
+            </div>
+            <div class="text-center">
+                <div class="w-16 h-16 bg-slate-800 rounded-xl flex items-center justify-center mb-2 border border-slate-700">
+                    <span class="text-2xl">🟠</span>
+                </div>
+                <span class="text-sm text-slate-400">Anthropic</span>
+            </div>
+            <div class="text-center">
+                <div class="w-16 h-16 bg-slate-800 rounded-xl flex items-center justify-center mb-2 border border-slate-700">
+                    <span class="text-2xl">🔵</span>
+                </div>
+                <span class="text-sm text-slate-400">Google</span>
+            </div>
+            <div class="text-center">
+                <div class="w-16 h-16 bg-slate-800 rounded-xl flex items-center justify-center mb-2 border border-slate-700">
+                    <span class="text-2xl">⚫</span>
+                </div>
+                <span class="text-sm text-slate-400">xAI (Grok)</span>
+            </div>
+            <div class="text-center">
+                <div class="w-16 h-16 bg-slate-800 rounded-xl flex items-center justify-center mb-2 border border-slate-700">
+                    <span class="text-2xl">🦙</span>
+                </div>
+                <span class="text-sm text-slate-400">Ollama</span>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

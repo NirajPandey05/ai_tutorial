@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .playground-grid {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 1.5rem;
+        height: calc(100vh - 180px);
+    }
+    
+    @media (max-width: 1024px) {
+        .playground-grid {
+            grid-template-columns: 1fr;
+            height: auto;
+        }
+    }
+    
+    .text-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .text-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        background: #1e293b;
+        border-radius: 0.375rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .text-item-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    
+    .text-item-text {
+        flex: 1;
+        font-size: 0.875rem;
+        color: #e2e8f0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .text-item-remove {
+        color: #64748b;
+        cursor: pointer;
+        padding: 0.25rem;
+    }
+    
+    .text-item-remove:hover {
+        color: #ef4444;
+    }
+    
+    .visualization-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .viz-tab {
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .viz-tab.active {
+        background: #0ea5e9;
+        color: white;
+    }
+    
+    .viz-tab:not(.active) {
+        background: #334155;
+        color: #94a3b8;
+    }
+    
+    .viz-tab:not(.active):hover {
+        background: #475569;
+    }
+    
+    .canvas-container {
+        background: #0f172a;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .similar-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        background: #1e293b;
+        border-radius: 0.25rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .similarity-bar {
+        height: 4px;
+        border-radius: 2px;
+        background: #334155;
+        margin-top: 0.25rem;
+    }
+    
+    .similarity-bar-fill {
+        height: 100%;
+        border-radius: 2px;
+        background: linear-gradient(90deg, #ef4444 0%, #eab308 50%, #22c55e 100%);
+    }
+    
+    .stats-row {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .stat-box {
+        flex: 1;
+        min-width: 100px;
+        background: #1e293b;
+        border-radius: 0.375rem;
+        padding: 0.75rem;
+        text-align: center;
+    }
+    
+    .stat-box-value {
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: #38bdf8;
+    }
+    
+    .stat-box-label {
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="p-6" x-data="embeddingPlaygroundApp()" x-init="init()">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-white flex items-center gap-3">
+            <span>📊</span>
+            Embedding Playground
+        </h1>
+        <p class="text-slate-400 mt-1">Visualize text embeddings, similarity, and clustering</p>
+    </div>
+    
+    <div class="playground-grid">
+        <!-- Left Panel: Input & Controls -->
+        <div class="space-y-4">
+            <!-- Add Text -->
+            <div class="bg-slate-800 rounded-lg p-4">
+                <h3 class="text-sm font-semibold text-slate-300 mb-3">Add Text</h3>
+                <div class="flex gap-2">
+                    <input 
+                        type="text" 
+                        x-model="newText"
+                        @keyup.enter="addText()"
+                        placeholder="Enter text to embed..."
+                        class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary-500"
+                    >
+                    <button 
+                        @click="addText()"
+                        :disabled="!newText.trim()"
+                        class="px-4 py-2 bg-primary-500 hover:bg-primary-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">
+                        Add
+                    </button>
+                </div>
+                
+                <!-- Quick Add Examples -->
+                <div class="mt-3 flex flex-wrap gap-2">
+                    <span class="text-xs text-slate-500">Quick add:</span>
+                    <button @click="addExample('animals')" class="text-xs px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300">Animals</button>
+                    <button @click="addExample('colors')" class="text-xs px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300">Colors</button>
+                    <button @click="addExample('tech')" class="text-xs px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300">Tech</button>
+                    <button @click="addExample('food')" class="text-xs px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300">Food</button>
+                </div>
+            </div>
+            
+            <!-- Text List -->
+            <div class="bg-slate-800 rounded-lg p-4">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-sm font-semibold text-slate-300">Texts (<span x-text="texts.length"></span>)</h3>
+                    <button @click="clearAll()" x-show="texts.length > 0" class="text-xs text-red-400 hover:text-red-300">Clear All</button>
+                </div>
+                
+                <div class="text-list" x-show="texts.length > 0">
+                    <template x-for="(text, index) in texts" :key="index">
+                        <div class="text-item">
+                            <div class="text-item-color" :style="{ background: getColor(index) }"></div>
+                            <div class="text-item-text" :title="text" x-text="text"></div>
+                            <button @click="removeText(index)" class="text-item-remove">×</button>
+                        </div>
+                    </template>
+                </div>
+                
+                <div x-show="texts.length === 0" class="text-center text-slate-500 text-sm py-4">
+                    No texts added yet
+                </div>
+            </div>
+            
+            <!-- Statistics -->
+            <div class="bg-slate-800 rounded-lg p-4">
+                <h3 class="text-sm font-semibold text-slate-300 mb-3">Statistics</h3>
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <div class="stat-box-value" x-text="stats.count"></div>
+                        <div class="stat-box-label">Texts</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-value" x-text="stats.dimensions"></div>
+                        <div class="stat-box-label">Dimensions</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-value" x-text="stats.avgSimilarity"></div>
+                        <div class="stat-box-label">Avg Similarity</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Similarity Search -->
+            <div class="bg-slate-800 rounded-lg p-4" x-show="texts.length >= 2">
+                <h3 class="text-sm font-semibold text-slate-300 mb-3">Find Similar</h3>
+                <select x-model="selectedQuery" @change="findSimilar()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm mb-3">
+                    <option value="-1">Select a text...</option>
+                    <template x-for="(text, index) in texts" :key="index">
+                        <option :value="index" x-text="text.substring(0, 40) + (text.length > 40 ? '...' : '')"></option>
+                    </template>
+                </select>
+                
+                <div x-show="similarResults.length > 0" class="space-y-1">
+                    <template x-for="result in similarResults" :key="result.index">
+                        <div class="similar-item">
+                            <span class="text-sm text-slate-300 truncate flex-1" x-text="result.label"></span>
+                            <span class="text-sm font-mono" :class="result.similarity > 0.7 ? 'text-green-400' : result.similarity > 0.4 ? 'text-yellow-400' : 'text-red-400'" x-text="result.similarity.toFixed(3)"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Panel: Visualization -->
+        <div class="space-y-4">
+            <!-- Visualization Tabs -->
+            <div class="flex justify-between items-center">
+                <div class="visualization-tabs">
+                    <button @click="setView('2d')" :class="{ 'active': view === '2d' }" class="viz-tab">2D Plot</button>
+                    <button @click="setView('matrix')" :class="{ 'active': view === 'matrix' }" class="viz-tab">Similarity Matrix</button>
+                </div>
+                
+                <div class="flex items-center gap-2" x-show="view === '2d'">
+                    <span class="text-xs text-slate-500">Method:</span>
+                    <select x-model="reductionMethod" @change="updateVisualization()" class="bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-white">
+                        <option value="pca">PCA</option>
+                        <option value="tsne">t-SNE</option>
+                        <option value="umap">UMAP</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- 2D Visualization -->
+            <div x-show="view === '2d'" class="canvas-container" style="height: 500px;">
+                <canvas id="embedding-canvas" width="800" height="500"></canvas>
+            </div>
+            
+            <!-- Similarity Matrix -->
+            <div x-show="view === 'matrix'" class="canvas-container overflow-auto" style="max-height: 500px;">
+                <canvas id="matrix-canvas"></canvas>
+            </div>
+            
+            <!-- Educational Info -->
+            <div class="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                <h3 class="text-sm font-semibold text-slate-300 mb-2">💡 About Embeddings</h3>
+                <div class="text-sm text-slate-400 space-y-2">
+                    <p>
+                        <strong>Embeddings</strong> are numerical representations of text that capture semantic meaning.
+                        Similar texts have similar embeddings (high cosine similarity).
+                    </p>
+                    <p>
+                        <strong>Dimensionality Reduction:</strong> Embeddings typically have 384-1536 dimensions.
+                        We use PCA, t-SNE, or UMAP to reduce them to 2D for visualization.
+                    </p>
+                    <p>
+                        <strong>Note:</strong> This demo uses mock embeddings for illustration.
+                        Real embeddings from OpenAI, Cohere, or other providers would show more meaningful semantic relationships.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/embedding-playground.js"></script>
+<script>
+function embeddingPlaygroundApp() {
+    return {
+        playground: null,
+        renderer2D: null,
+        matrixRenderer: null,
+        
+        texts: [],
+        newText: '',
+        view: '2d',
+        reductionMethod: 'pca',
+        selectedQuery: -1,
+        similarResults: [],
+        stats: {
+            count: 0,
+            dimensions: 0,
+            avgSimilarity: 0
+        },
+        
+        colors: [
+            '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
+            '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',
+        ],
+        
+        init() {
+            this.playground = new EmbeddingPlayground();
+            
+            // Initialize renderers
+            const canvas2D = document.getElementById('embedding-canvas');
+            this.renderer2D = new EmbeddingRenderer2D(canvas2D, {
+                showLabels: true
+            });
+            
+            const matrixCanvas = document.getElementById('matrix-canvas');
+            this.matrixRenderer = new SimilarityMatrixRenderer(matrixCanvas);
+            
+            // Handle resize
+            this.resizeCanvas();
+            window.addEventListener('resize', () => this.resizeCanvas());
+            
+            // Add some example texts to start
+            this.addExample('animals');
+        },
+        
+        resizeCanvas() {
+            const container = document.querySelector('.canvas-container');
+            if (container && this.renderer2D) {
+                const rect = container.getBoundingClientRect();
+                this.renderer2D.resize(rect.width, rect.height);
+            }
+        },
+        
+        addText() {
+            if (!this.newText.trim()) return;
+            
+            this.texts.push(this.newText.trim());
+            this.playground.addText(this.newText.trim());
+            this.newText = '';
+            
+            this.updateVisualization();
+        },
+        
+        removeText(index) {
+            this.texts.splice(index, 1);
+            this.playground.clear();
+            this.texts.forEach(text => this.playground.addText(text));
+            this.updateVisualization();
+        },
+        
+        clearAll() {
+            this.texts = [];
+            this.playground.clear();
+            this.similarResults = [];
+            this.selectedQuery = -1;
+            this.updateVisualization();
+        },
+        
+        getColor(index) {
+            return this.colors[index % this.colors.length];
+        },
+        
+        setView(view) {
+            this.view = view;
+            this.$nextTick(() => {
+                this.updateVisualization();
+            });
+        },
+        
+        updateVisualization() {
+            // Update stats
+            this.stats = this.playground.getStats();
+            
+            if (this.view === '2d') {
+                let reducedData;
+                switch (this.reductionMethod) {
+                    case 'tsne':
+                        reducedData = this.playground.reduceDimensionsTSNE();
+                        break;
+                    case 'umap':
+                        reducedData = this.playground.reduceDimensionsUMAP();
+                        break;
+                    default:
+                        reducedData = this.playground.reduceDimensionsPCA();
+                }
+                this.renderer2D.render(reducedData);
+            } else if (this.view === 'matrix') {
+                const matrix = this.playground.getSimilarityMatrix();
+                const labels = this.texts.map(t => t.substring(0, 15) + (t.length > 15 ? '...' : ''));
+                this.matrixRenderer.render(matrix, labels);
+            }
+        },
+        
+        findSimilar() {
+            if (this.selectedQuery < 0) {
+                this.similarResults = [];
+                return;
+            }
+            
+            this.similarResults = this.playground.findSimilar(parseInt(this.selectedQuery), 5);
+        },
+        
+        addExample(type) {
+            const examples = {
+                'animals': [
+                    'The cat sat on the mat',
+                    'A dog chased the ball',
+                    'Birds fly in the sky',
+                    'Fish swim in the ocean',
+                    'The elephant is very large'
+                ],
+                'colors': [
+                    'The red rose bloomed',
+                    'Blue sky on a clear day',
+                    'Green grass in spring',
+                    'Yellow sunflowers in the field',
+                    'Purple grapes on the vine'
+                ],
+                'tech': [
+                    'Machine learning algorithms',
+                    'Neural network architecture',
+                    'Database query optimization',
+                    'Cloud computing services',
+                    'Artificial intelligence research'
+                ],
+                'food': [
+                    'Fresh pizza from the oven',
+                    'Chocolate cake for dessert',
+                    'Sushi and sashimi platter',
+                    'Grilled steak with vegetables',
+                    'Ice cream on a hot day'
+                ]
+            };
+            
+            const items = examples[type] || [];
+            items.forEach(text => {
+                if (!this.texts.includes(text)) {
+                    this.texts.push(text);
+                    this.playground.addText(text);
+                }
+            });
+            
+            this.updateVisualization();
+        }
+    };
+}
+</script>
+{% endblock %}

@@ -1,0 +1,522 @@
+{% extends "base.html" %}
+
+{% block title %}My Progress - AI Engineering Tutorial{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-6 py-8" x-data="progressDashboard()">
+    <!-- Header -->
+    <div class="text-center mb-12">
+        <span class="text-5xl mb-4 block">📊</span>
+        <h1 class="text-3xl font-bold text-white mb-2">My Learning Dashboard</h1>
+        <p class="text-slate-400">Track your progress, achievements, and learning journey</p>
+    </div>
+    
+    <!-- Main Stats Card -->
+    <div class="bg-gradient-to-r from-primary-500/20 to-accent-500/20 border border-primary-500/30 rounded-xl p-6 mb-8">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center space-x-6">
+                <!-- Circular Progress -->
+                <div class="relative w-28 h-28">
+                    <svg class="w-28 h-28 transform -rotate-90">
+                        <circle cx="56" cy="56" r="48" fill="none" stroke="#1e293b" stroke-width="8"/>
+                        <circle cx="56" cy="56" r="48" fill="none" stroke="url(#progress-gradient)" stroke-width="8"
+                                stroke-linecap="round"
+                                :stroke-dasharray="301.6"
+                                :stroke-dashoffset="301.6 - (301.6 * stats.overallProgress / 100)"
+                                class="transition-all duration-1000"/>
+                    </svg>
+                    <defs>
+                        <linearGradient id="progress-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#0ea5e9"/>
+                            <stop offset="100%" style="stop-color:#d946ef"/>
+                        </linearGradient>
+                    </defs>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-2xl font-bold text-white" x-text="stats.overallProgress + '%'">0%</span>
+                    </div>
+                </div>
+                
+                <div>
+                    <h2 class="text-xl font-semibold text-white">Overall Progress</h2>
+                    <p class="text-slate-400 mt-1">
+                        <span x-text="stats.completedItems">0</span> of 
+                        <span x-text="stats.totalItems">0</span> items completed
+                    </p>
+                    <div class="flex items-center mt-2 space-x-4 text-sm">
+                        <span class="text-primary-400">
+                            <span x-text="stats.timeSpent">0</span> min learned
+                        </span>
+                        <span class="text-slate-500">•</span>
+                        <span class="text-accent-400">
+                            <span x-text="stats.achievements">0</span> achievements
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Streak Counter -->
+            <div class="flex items-center space-x-4 bg-slate-800/50 rounded-xl p-4">
+                <div class="text-5xl">🔥</div>
+                <div>
+                    <div class="text-3xl font-bold text-orange-400" x-text="stats.streak">0</div>
+                    <div class="text-sm text-slate-400">day streak</div>
+                    <div class="text-xs text-slate-500 mt-1" x-text="stats.longestStreak + ' day record'">0 day record</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 text-center group hover:border-green-500/50 transition-colors">
+            <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-green-500/20 flex items-center justify-center text-2xl">
+                📖
+            </div>
+            <div class="text-3xl font-bold text-green-400" x-text="stats.lessons">0</div>
+            <div class="text-sm text-slate-400">Lessons</div>
+        </div>
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 text-center group hover:border-amber-500/50 transition-colors">
+            <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-amber-500/20 flex items-center justify-center text-2xl">
+                🧪
+            </div>
+            <div class="text-3xl font-bold text-amber-400" x-text="stats.labs">0</div>
+            <div class="text-sm text-slate-400">Labs</div>
+        </div>
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 text-center group hover:border-purple-500/50 transition-colors">
+            <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-purple-500/20 flex items-center justify-center text-2xl">
+                📝
+            </div>
+            <div class="text-3xl font-bold text-purple-400" x-text="stats.quizzes">0</div>
+            <div class="text-sm text-slate-400">Quizzes</div>
+        </div>
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 text-center group hover:border-blue-500/50 transition-colors">
+            <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-blue-500/20 flex items-center justify-center text-2xl">
+                🔖
+            </div>
+            <div class="text-3xl font-bold text-blue-400" x-text="stats.bookmarks">0</div>
+            <div class="text-sm text-slate-400">Bookmarks</div>
+        </div>
+    </div>
+    
+    <!-- Achievements Section -->
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 mb-8">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-lg font-semibold text-white">🏆 Achievements</h2>
+            <span class="text-sm text-slate-400">
+                <span x-text="unlockedAchievements">0</span> / <span x-text="totalAchievements">0</span> unlocked
+            </span>
+        </div>
+        
+        <!-- Achievement Categories -->
+        <div class="space-y-6">
+            <!-- Getting Started -->
+            <div>
+                <h3 class="text-sm font-medium text-slate-400 mb-3">Getting Started</h3>
+                <div class="grid grid-cols-4 md:grid-cols-8 gap-3">
+                    <template x-for="achievement in achievementsByCategory['getting-started']" :key="achievement.id">
+                        <div class="text-center group relative"
+                             :class="{ 'opacity-30 grayscale': !isUnlocked(achievement.id) }">
+                            <div class="w-12 h-12 mx-auto mb-1 rounded-full flex items-center justify-center text-2xl transition-transform group-hover:scale-110"
+                                 :class="achievement.color || 'bg-slate-700'">
+                                <span x-text="achievement.icon">🎯</span>
+                            </div>
+                            <div class="text-xs text-slate-400 truncate" x-text="achievement.name">Achievement</div>
+                            
+                            <!-- Tooltip -->
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                                <div class="font-medium text-white" x-text="achievement.name">Achievement</div>
+                                <div class="text-slate-400" x-text="achievement.description">Description</div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            
+            <!-- Progress -->
+            <div>
+                <h3 class="text-sm font-medium text-slate-400 mb-3">Progress Milestones</h3>
+                <div class="grid grid-cols-4 md:grid-cols-8 gap-3">
+                    <template x-for="achievement in achievementsByCategory['progress']" :key="achievement.id">
+                        <div class="text-center group relative"
+                             :class="{ 'opacity-30 grayscale': !isUnlocked(achievement.id) }">
+                            <div class="w-12 h-12 mx-auto mb-1 rounded-full flex items-center justify-center text-2xl transition-transform group-hover:scale-110"
+                                 :class="achievement.color || 'bg-slate-700'">
+                                <span x-text="achievement.icon">🎯</span>
+                            </div>
+                            <div class="text-xs text-slate-400 truncate" x-text="achievement.name">Achievement</div>
+                            
+                            <!-- Tooltip -->
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                                <div class="font-medium text-white" x-text="achievement.name">Achievement</div>
+                                <div class="text-slate-400" x-text="achievement.description">Description</div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            
+            <!-- Streaks -->
+            <div>
+                <h3 class="text-sm font-medium text-slate-400 mb-3">Consistency</h3>
+                <div class="grid grid-cols-4 md:grid-cols-8 gap-3">
+                    <template x-for="achievement in achievementsByCategory['streak']" :key="achievement.id">
+                        <div class="text-center group relative"
+                             :class="{ 'opacity-30 grayscale': !isUnlocked(achievement.id) }">
+                            <div class="w-12 h-12 mx-auto mb-1 rounded-full flex items-center justify-center text-2xl transition-transform group-hover:scale-110"
+                                 :class="achievement.color || 'bg-slate-700'">
+                                <span x-text="achievement.icon">🎯</span>
+                            </div>
+                            <div class="text-xs text-slate-400 truncate" x-text="achievement.name">Achievement</div>
+                            
+                            <!-- Tooltip -->
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                                <div class="font-medium text-white" x-text="achievement.name">Achievement</div>
+                                <div class="text-slate-400" x-text="achievement.description">Description</div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            
+            <!-- Modules -->
+            <div>
+                <h3 class="text-sm font-medium text-slate-400 mb-3">Module Mastery</h3>
+                <div class="grid grid-cols-4 md:grid-cols-8 gap-3">
+                    <template x-for="achievement in achievementsByCategory['modules']" :key="achievement.id">
+                        <div class="text-center group relative"
+                             :class="{ 'opacity-30 grayscale': !isUnlocked(achievement.id) }">
+                            <div class="w-12 h-12 mx-auto mb-1 rounded-full flex items-center justify-center text-2xl transition-transform group-hover:scale-110"
+                                 :class="achievement.color || 'bg-slate-700'">
+                                <span x-text="achievement.icon">🎯</span>
+                            </div>
+                            <div class="text-xs text-slate-400 truncate" x-text="achievement.name">Achievement</div>
+                            
+                            <!-- Tooltip -->
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                                <div class="font-medium text-white" x-text="achievement.name">Achievement</div>
+                                <div class="text-slate-400" x-text="achievement.description">Description</div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Module Progress -->
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 mb-8">
+        <h2 class="text-lg font-semibold text-white mb-6">📚 Module Progress</h2>
+        
+        <div class="space-y-4">
+            {% for module in all_modules %}
+            <div class="group" 
+                 x-data="{ 
+                    progress: 0,
+                    completed: 0,
+                    total: {{ module.total_items }},
+                    expanded: false,
+                    init() {
+                        // Use ProgressTracker to calculate module progress
+                        const moduleProgress = ProgressTracker.getModuleProgress('{{ module.id }}');
+                        this.completed = moduleProgress.completed;
+                        this.total = moduleProgress.total || this.total;
+                        this.progress = moduleProgress.percentage;
+                    }
+                 }">
+                <!-- Module Header -->
+                <div class="flex items-center justify-between p-4 bg-slate-700/50 rounded-lg cursor-pointer hover:bg-slate-700 transition-colors"
+                     @click="expanded = !expanded">
+                    <div class="flex items-center space-x-4">
+                        <span class="text-2xl">{{ module.icon }}</span>
+                        <div>
+                            <a href="/learn/{{ module.id }}" 
+                               class="font-medium text-white hover:text-primary-400 transition-colors"
+                               @click.stop>
+                                {{ module.title }}
+                            </a>
+                            <div class="text-sm text-slate-500">
+                                {{ module.sections|length }} sections · 
+                                <span x-text="completed + '/' + total">0</span> items
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="w-32 hidden md:block">
+                            <div class="w-full h-2 bg-slate-600 rounded-full overflow-hidden">
+                                <div class="h-full bg-primary-500 transition-all duration-500" :style="'width: ' + progress + '%'"></div>
+                            </div>
+                        </div>
+                        <span class="text-sm font-medium w-12 text-right"
+                              :class="progress === 100 ? 'text-green-400' : 'text-slate-300'"
+                              x-text="progress + '%'">0%</span>
+                        <svg class="w-5 h-5 text-slate-400 transition-transform" :class="{ 'rotate-180': expanded }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                </div>
+                
+                <!-- Expanded Section Content -->
+                <div x-show="expanded" x-collapse class="mt-2 ml-10 space-y-2">
+                    {% for section in module.sections %}
+                    <div class="p-3 bg-slate-700/30 rounded-lg">
+                        <div class="text-sm font-medium text-slate-300 mb-2">{{ section.title }}</div>
+                        <div class="space-y-1">
+                            {% for page in section.pages %}
+                            <div class="flex items-center space-x-2 text-sm"
+                                 x-data="{ completed: ProgressTracker.isComplete('{{ page.id }}') }">
+                                <span class="w-5 h-5 rounded-full flex items-center justify-center text-xs"
+                                      :class="completed ? 'bg-green-500 text-white' : 'bg-slate-600 text-slate-400'">
+                                    <template x-if="completed">✓</template>
+                                    <template x-if="!completed">○</template>
+                                </span>
+                                <a href="/learn/{{ module.id }}/{{ page.id }}" 
+                                   class="hover:text-primary-400 transition-colors"
+                                   :class="completed ? 'text-slate-400' : 'text-slate-300'">
+                                    {{ page.title }}
+                                </a>
+                            </div>
+                            {% endfor %}
+                            {% for lab in section.labs %}
+                            <div class="flex items-center space-x-2 text-sm"
+                                 x-data="{ completed: ProgressTracker.isComplete('{{ lab.id }}') }">
+                                <span class="w-5 h-5 rounded-full flex items-center justify-center text-xs"
+                                      :class="completed ? 'bg-amber-500 text-white' : 'bg-slate-600 text-slate-400'">
+                                    <template x-if="completed">✓</template>
+                                    <template x-if="!completed">🧪</template>
+                                </span>
+                                <a href="/learn/{{ module.id }}/{{ lab.id }}" 
+                                   class="hover:text-amber-400 transition-colors"
+                                   :class="completed ? 'text-slate-400' : 'text-amber-300'">
+                                    {{ lab.title }}
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 mb-8">
+        <h2 class="text-lg font-semibold text-white mb-4">📅 Recent Activity</h2>
+        <div class="space-y-3" x-show="recentActivity.length > 0">
+            <template x-for="activity in recentActivity" :key="activity.id">
+                <div class="flex items-center space-x-3 p-3 bg-slate-700/30 rounded-lg">
+                    <span class="text-xl" x-text="activity.icon">📖</span>
+                    <div class="flex-1">
+                        <div class="text-sm text-white" x-text="activity.title">Item</div>
+                        <div class="text-xs text-slate-500" x-text="activity.timeAgo">Just now</div>
+                    </div>
+                    <span class="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-400">Completed</span>
+                </div>
+            </template>
+        </div>
+        <div x-show="recentActivity.length === 0" class="text-center py-8 text-slate-500">
+            <span class="text-4xl block mb-2">📭</span>
+            <p>No recent activity yet. Start learning to see your progress here!</p>
+        </div>
+    </div>
+    
+    <!-- Data Management -->
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-6">
+        <h2 class="text-lg font-semibold text-white mb-4">⚙️ Data Management</h2>
+        <div class="flex flex-wrap gap-4">
+            <button @click="exportProgress()" 
+                    class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors flex items-center space-x-2">
+                <span>📥</span>
+                <span>Export Progress</span>
+            </button>
+            <label class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors flex items-center space-x-2 cursor-pointer">
+                <span>📤</span>
+                <span>Import Progress</span>
+                <input type="file" accept=".json" @change="importProgress($event)" class="hidden">
+            </label>
+            <button @click="syncProgress()" 
+                    class="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors flex items-center space-x-2">
+                <span>🔄</span>
+                <span>Sync to Server</span>
+            </button>
+            <button @click="resetProgress()" 
+                    class="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors flex items-center space-x-2">
+                <span>🗑️</span>
+                <span>Reset All</span>
+            </button>
+        </div>
+        <p class="text-xs text-slate-500 mt-4">
+            Your progress is automatically saved locally. Export to keep a backup or transfer to another device.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function progressDashboard() {
+    return {
+        stats: {
+            overallProgress: 0,
+            completedItems: 0,
+            totalItems: 0,
+            lessons: 0,
+            labs: 0,
+            quizzes: 0,
+            bookmarks: 0,
+            achievements: 0,
+            timeSpent: 0,
+            streak: 0,
+            longestStreak: 0
+        },
+        unlockedAchievements: 0,
+        totalAchievements: 0,
+        achievementsByCategory: {},
+        recentActivity: [],
+        
+        init() {
+            // Load stats from ProgressTracker
+            this.loadStats();
+            this.loadAchievements();
+            this.loadRecentActivity();
+        },
+        
+        loadStats() {
+            const trackerStats = ProgressTracker.getStats();
+            
+            this.stats.overallProgress = trackerStats.overallProgress || 0;
+            this.stats.completedItems = trackerStats.completedItems || 0;
+            this.stats.totalItems = trackerStats.totalItems || {{ all_modules|sum(attribute='total_items') if all_modules else 100 }};
+            this.stats.lessons = trackerStats.lessons || 0;
+            this.stats.labs = trackerStats.labs || 0;
+            this.stats.quizzes = trackerStats.quizzes || 0;
+            this.stats.bookmarks = ProgressTracker.data.bookmarks?.length || 0;
+            this.stats.achievements = Object.keys(ProgressTracker.data.achievements || {}).length;
+            this.stats.timeSpent = Math.round((ProgressTracker.data.timeSpent?.total || 0) / 60);
+            this.stats.streak = ProgressTracker.data.streak?.current || 0;
+            this.stats.longestStreak = ProgressTracker.data.streak?.longest || 0;
+        },
+        
+        loadAchievements() {
+            // Group achievements by category
+            const categories = ['getting-started', 'progress', 'streak', 'modules', 'special'];
+            this.achievementsByCategory = {};
+            
+            for (const category of categories) {
+                this.achievementsByCategory[category] = ProgressTracker.ACHIEVEMENTS
+                    .filter(a => a.category === category)
+                    .map(a => ({
+                        ...a,
+                        color: this.getAchievementColor(a.category)
+                    }));
+            }
+            
+            this.totalAchievements = ProgressTracker.ACHIEVEMENTS.length;
+            this.unlockedAchievements = Object.keys(ProgressTracker.data.achievements || {}).length;
+        },
+        
+        getAchievementColor(category) {
+            const colors = {
+                'getting-started': 'bg-green-500/20',
+                'progress': 'bg-blue-500/20',
+                'streak': 'bg-orange-500/20',
+                'modules': 'bg-purple-500/20',
+                'special': 'bg-amber-500/20'
+            };
+            return colors[category] || 'bg-slate-700';
+        },
+        
+        isUnlocked(achievementId) {
+            return ProgressTracker.data.achievements?.[achievementId] !== undefined;
+        },
+        
+        loadRecentActivity() {
+            // Get recent completions
+            const completed = ProgressTracker.data.completedItems || {};
+            const activities = [];
+            
+            for (const [id, timestamp] of Object.entries(completed)) {
+                activities.push({
+                    id,
+                    title: this.formatItemId(id),
+                    icon: this.getItemIcon(id),
+                    timestamp,
+                    timeAgo: this.formatTimeAgo(timestamp)
+                });
+            }
+            
+            // Sort by timestamp descending and take top 10
+            activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            this.recentActivity = activities.slice(0, 10);
+        },
+        
+        formatItemId(id) {
+            // Convert item-id to "Item Id" format
+            return id.split('-').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ');
+        },
+        
+        getItemIcon(id) {
+            if (id.includes('lab')) return '🧪';
+            if (id.includes('quiz')) return '📝';
+            return '📖';
+        },
+        
+        formatTimeAgo(timestamp) {
+            const now = new Date();
+            const then = new Date(timestamp);
+            const diffMs = now - then;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays < 7) return `${diffDays}d ago`;
+            return then.toLocaleDateString();
+        },
+        
+        exportProgress() {
+            ProgressTracker.exportProgress();
+        },
+        
+        importProgress(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (ProgressTracker.importProgress(data)) {
+                            window.location.reload();
+                        }
+                    } catch (error) {
+                        alert('Invalid progress file');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        },
+        
+        async syncProgress() {
+            const result = await ProgressTracker.syncWithServer();
+            if (result.success) {
+                ProgressTracker.showToast('Progress synced successfully!', 'success');
+            }
+        },
+        
+        resetProgress() {
+            if (confirm('Are you sure you want to reset ALL progress? This cannot be undone.')) {
+                if (confirm('This will delete all your progress, achievements, and bookmarks. Are you really sure?')) {
+                    ProgressTracker.reset();
+                    window.location.reload();
+                }
+            }
+        }
+    };
+}
+</script>
+{% endblock %}

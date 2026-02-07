@@ -1,0 +1,64 @@
+{
+  "name": "AI Engineering Tutorial",
+  "dockerComposeFile": "../docker-compose.dev.yml",
+  "service": "app",
+  "workspaceFolder": "/app",
+  
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "charliermarsh.ruff",
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode",
+        "ms-toolsai.jupyter",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "donjayamanne.python-environment-manager"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/opt/venv/bin/python",
+        "python.terminal.activateEnvironment": true,
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter",
+          "editor.formatOnSave": true
+        },
+        "editor.formatOnSave": true,
+        "files.trimTrailingWhitespace": true,
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+  
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": true
+    },
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  
+  "forwardPorts": [8080, 11434],
+  "portsAttributes": {
+    "8080": {
+      "label": "AI Tutorial",
+      "onAutoForward": "notify"
+    },
+    "11434": {
+      "label": "Ollama",
+      "onAutoForward": "silent"
+    }
+  },
+  
+  "postCreateCommand": "uv sync && echo 'Environment ready!'",
+  "postStartCommand": "echo 'Starting AI Tutorial... Run: uvicorn src.ai_tutorial.main:app --reload --port 8080'",
+  
+  "remoteUser": "root",
+  
+  "containerEnv": {
+    "APP_ENV": "development",
+    "PYTHONPATH": "/app/src"
+  }
+}

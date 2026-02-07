@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    /* Code editor styling */
+    .code-editor {
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 14px;
+        line-height: 1.5;
+        tab-size: 4;
+    }
+    
+    /* Prose styling for instructions */
+    .prose {
+        color: #e2e8f0;
+        line-height: 1.75;
+    }
+    .prose h1, .prose h2, .prose h3 { color: #fff; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+    .prose p { margin-bottom: 1rem; }
+    .prose ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+    .prose code:not(.hljs) { background: #1e293b; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.875rem; color: #f472b6; }
+    .prose pre { margin: 1rem 0; border-radius: 0.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="h-full flex flex-col" x-data="labComponent()">
+    <!-- Lab Header -->
+    <div class="bg-slate-800 border-b border-slate-700 px-6 py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <span class="text-3xl">🧪</span>
+                <div>
+                    <h1 class="text-xl font-bold text-white">{{ lab.title if lab else (page.title if page else 'Interactive Lab') }}</h1>
+                    <p class="text-sm text-slate-400">{{ lab.description if lab else (page.description if page else '') }}</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <!-- Provider Selector -->
+                <select x-model="selectedProvider" 
+                        class="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary-500">
+                    <option value="openai">OpenAI (GPT-5.2)</option>
+                    <option value="anthropic">Anthropic (Claude 4.5)</option>
+                    <option value="google">Google (Gemini 3)</option>
+                    <option value="xai">xAI (Grok 4)</option>
+                </select>
+                
+                <!-- Run Button -->
+                <button @click="runCode()" 
+                        :disabled="isRunning"
+                        class="px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors flex items-center space-x-2">
+                    <span x-show="!isRunning">▶ Run</span>
+                    <span x-show="isRunning">
+                        <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </span>
+                </button>
+                
+                <!-- Reset Button -->
+                <button @click="resetCode()" 
+                        class="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg font-medium transition-colors">
+                    ↺ Reset
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Lab Area -->
+    <div class="flex-1 flex overflow-hidden">
+        <!-- Left Panel: Instructions -->
+        <div class="w-1/3 border-r border-slate-700 overflow-y-auto p-6">
+            <div class="prose">
+                {% if rendered_content %}
+                {{ rendered_content | safe }}
+                {% elif lab and lab.instructions %}
+                {{ lab.instructions | safe }}
+                {% else %}
+                <h2>Instructions</h2>
+                <p>Welcome to this interactive lab! Follow these steps:</p>
+                <ol class="list-decimal pl-4 space-y-2 text-slate-300">
+                    <li>Review the starter code on the right</li>
+                    <li>Select your preferred LLM provider</li>
+                    <li>Modify the code as needed</li>
+                    <li>Click "Run" to execute</li>
+                    <li>Observe the output below</li>
+                </ol>
+                
+                <div class="mt-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                    <div class="flex items-center space-x-2 text-amber-400 mb-2">
+                        <span>💡</span>
+                        <span class="font-semibold">Tip</span>
+                    </div>
+                    <p class="text-sm text-slate-300">
+                        Make sure you have configured your API key in 
+                        <a href="/settings" class="text-amber-400 hover:underline">Settings</a> 
+                        before running the lab.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Hints Section -->
+            {% if lab and lab.hints %}
+            <div class="mt-8" x-data="{ showHints: false, currentHint: 0 }">
+                <button @click="showHints = !showHints" class="text-primary-400 hover:text-primary-300 text-sm flex items-center space-x-2">
+                    <span>💡 Need a hint?</span>
+                    <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': showHints }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div x-show="showHints" x-collapse class="mt-4 space-y-2">
+                    {% for hint in lab.hints %}
+                    <div class="p-3 bg-slate-700/50 rounded-lg text-sm text-slate-300" x-show="currentHint >= {{ loop.index0 }}">
+                        <span class="text-primary-400">Hint {{ loop.index }}:</span> {{ hint }}
+                    </div>
+                    {% endfor %}
+                    <button @click="currentHint = Math.min(currentHint + 1, {{ lab.hints|length - 1 }})" 
+                            x-show="currentHint < {{ lab.hints|length - 1 }}"
+                            class="text-sm text-slate-400 hover:text-white">
+                        Show next hint →
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Right Panel: Code Editor & Output -->
+        <div class="flex-1 flex flex-col">
+            <!-- Code Editor -->
+            <div class="flex-1 relative">
+                <div class="absolute top-2 left-2 text-xs text-slate-500 z-10">Python</div>
+                <textarea 
+                    x-model="code"
+                    class="code-editor w-full h-full bg-slate-900 text-slate-100 p-4 pt-8 resize-none focus:outline-none"
+                    spellcheck="false"
+                ></textarea>
+            </div>
+            
+            <!-- Output Panel -->
+            <div class="h-1/3 border-t border-slate-700 bg-slate-900 overflow-hidden flex flex-col">
+                <div class="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
+                    <span class="text-sm text-slate-400">Output</span>
+                    <button @click="output = ''" class="text-xs text-slate-500 hover:text-white">Clear</button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 font-mono text-sm whitespace-pre-wrap"
+                     :class="{ 'text-red-400': hasError, 'text-green-400': !hasError && output }">
+                    <template x-if="output">
+                        <span x-text="output"></span>
+                    </template>
+                    <template x-if="!output && !isRunning">
+                        <span class="text-slate-500">Output will appear here when you run the code...</span>
+                    </template>
+                    <template x-if="isRunning">
+                        <span class="text-slate-400">Running...</span>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Success Modal -->
+    <div x-show="showSuccess" 
+         x-transition
+         class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-slate-800 rounded-xl p-8 text-center max-w-md" @click.away="showSuccess = false">
+            <span class="text-6xl mb-4 block">🎉</span>
+            <h2 class="text-2xl font-bold text-white mb-2">Lab Complete!</h2>
+            <p class="text-slate-400 mb-6">Great job completing this lab exercise.</p>
+            <div class="flex items-center justify-center space-x-4">
+                <button @click="showSuccess = false" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white">
+                    Continue Practicing
+                </button>
+                {% if next_section %}
+                <a href="/learn/{{ module.id }}/{{ next_section.id }}" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 rounded-lg text-white">
+                    Next Section →
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function labComponent() {
+    return {
+        code: {{ (lab.starter_code if lab and lab.starter_code else (page.starter_code if page and page.starter_code else '# Write your code here\n\n')) | tojson }},
+        originalCode: {{ (lab.starter_code if lab and lab.starter_code else (page.starter_code if page and page.starter_code else '# Write your code here\n\n')) | tojson }},
+        selectedProvider: localStorage.getItem('selectedProvider') || 'openai',
+        output: '',
+        isRunning: false,
+        hasError: false,
+        showSuccess: false,
+        labId: '{{ lab.id if lab else (page.id if page else "") }}',
+        moduleId: '{{ module.id if module else "" }}',
+        
+        async runCode() {
+            this.isRunning = true;
+            this.hasError = false;
+            this.output = '';
+            
+            try {
+                const response = await fetch('/api/lab/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        code: this.code,
+                        provider: this.selectedProvider,
+                        lab_id: this.labId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.output = data.output;
+                    
+                    // Save lab result using ProgressTracker
+                    ProgressTracker.saveLabResult(this.labId, {
+                        code: this.code,
+                        output: data.output,
+                        provider: this.selectedProvider,
+                        success: true
+                    });
+                    
+                    if (data.completed) {
+                        this.showSuccess = true;
+                        // Mark as complete with ProgressTracker
+                        ProgressTracker.markComplete(this.labId, 'lab', this.moduleId);
+                    }
+                } else {
+                    this.hasError = true;
+                    this.output = data.error || 'An error occurred';
+                    
+                    // Save failed attempt
+                    ProgressTracker.saveLabResult(this.labId, {
+                        code: this.code,
+                        error: data.error,
+                        provider: this.selectedProvider,
+                        success: false
+                    });
+                }
+            } catch (error) {
+                this.hasError = true;
+                this.output = 'Failed to execute code: ' + error.message;
+            } finally {
+                this.isRunning = false;
+            }
+        },
+        
+        resetCode() {
+            this.code = this.originalCode;
+            this.output = '';
+            this.hasError = false;
+        },
+        
+        init() {
+            // Watch provider selection
+            this.$watch('selectedProvider', (value) => {
+                localStorage.setItem('selectedProvider', value);
+            });
+            
+            // Load previous lab result if exists
+            const previousResult = ProgressTracker.data.labResults?.[this.labId];
+            if (previousResult?.code) {
+                // Offer to restore previous code
+                if (previousResult.code !== this.originalCode) {
+                    this.code = previousResult.code;
+                }
+            }
+        }
+    };
+}
+</script>
+{% endblock %}

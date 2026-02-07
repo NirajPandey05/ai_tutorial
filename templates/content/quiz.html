@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-6 py-8" x-data="quizComponent()">
+    <!-- Quiz Header -->
+    <div class="text-center mb-8">
+        <span class="text-5xl mb-4 block">📝</span>
+        <h1 class="text-3xl font-bold text-white mb-2">{{ quiz.title if quiz else (page.title if page else 'Knowledge Check') }}</h1>
+        <p class="text-slate-400">{{ quiz.description if quiz else (page.description if page else 'Test your understanding') }}</p>
+        
+        <div class="flex items-center justify-center space-x-6 mt-4 text-sm text-slate-500">
+            <span>⏱️ {{ quiz.estimated_time if quiz else 10 }} min</span>
+            <span>✓ Pass: {{ quiz.passing_score if quiz else 70 }}%</span>
+        </div>
+    </div>
+    
+    <!-- Quiz Not Started -->
+    <div x-show="!started && !completed" class="text-center">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-8 mb-6">
+            <h2 class="text-xl font-semibold text-white mb-4">Ready to test your knowledge?</h2>
+            <ul class="text-left text-slate-400 space-y-2 mb-6 max-w-md mx-auto">
+                <li>✓ Questions are multiple choice</li>
+                <li>✓ You can change answers before submitting</li>
+                <li>✓ Results are shown immediately</li>
+            </ul>
+            <button @click="startQuiz()" 
+                    class="px-8 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-lg font-medium transition-colors">
+                Start Quiz
+            </button>
+        </div>
+    </div>
+    
+    <!-- Quiz In Progress -->
+    <div x-show="started && !completed">
+        <!-- Progress Bar -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between text-sm mb-2">
+                <span class="text-slate-400">Question <span x-text="currentQuestion + 1"></span> of <span x-text="questions.length"></span></span>
+                <span class="text-slate-400" x-text="Math.round((currentQuestion / questions.length) * 100) + '% complete'"></span>
+            </div>
+            <div class="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+                <div class="h-full bg-primary-500 transition-all duration-300" 
+                     :style="'width: ' + ((currentQuestion / questions.length) * 100) + '%'"></div>
+            </div>
+        </div>
+        
+        <!-- Question Card -->
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-8 mb-6">
+            <template x-for="(question, qIndex) in questions" :key="qIndex">
+                <div x-show="currentQuestion === qIndex">
+                    <!-- Question type badge -->
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="px-2 py-1 rounded text-xs font-medium"
+                              :class="question.type === 'multiple-select' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'"
+                              x-text="question.type === 'multiple-select' ? 'Select All That Apply' : 'Single Choice'"></span>
+                    </div>
+                    
+                    <h2 class="text-xl font-semibold text-white mb-6" x-text="question.text"></h2>
+                    
+                    <div class="space-y-3">
+                        <template x-for="(option, oIndex) in question.options" :key="oIndex">
+                            <!-- Single choice question -->
+                            <button x-show="question.type !== 'multiple-select'"
+                                    @click="selectAnswer(qIndex, oIndex)"
+                                    class="w-full text-left p-4 rounded-lg border transition-all"
+                                    :class="answers[qIndex] === oIndex 
+                                        ? 'bg-primary-500/20 border-primary-500 text-white' 
+                                        : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:border-slate-500'">
+                                <span class="inline-flex items-center justify-center w-6 h-6 rounded-full mr-3 text-sm"
+                                      :class="answers[qIndex] === oIndex ? 'bg-primary-500 text-white' : 'bg-slate-600 text-slate-400'">
+                                    <span x-text="['A', 'B', 'C', 'D', 'E', 'F'][oIndex]"></span>
+                                </span>
+                                <span x-text="option"></span>
+                            </button>
+                            
+                            <!-- Multiple select question -->
+                            <button x-show="question.type === 'multiple-select'"
+                                    @click="toggleMultiSelect(qIndex, oIndex)"
+                                    class="w-full text-left p-4 rounded-lg border transition-all"
+                                    :class="isMultiSelected(qIndex, oIndex) 
+                                        ? 'bg-primary-500/20 border-primary-500 text-white' 
+                                        : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:border-slate-500'">
+                                <span class="inline-flex items-center justify-center w-6 h-6 rounded mr-3 text-sm border-2"
+                                      :class="isMultiSelected(qIndex, oIndex) ? 'bg-primary-500 border-primary-500 text-white' : 'bg-slate-700 border-slate-500 text-slate-400'">
+                                    <span x-show="isMultiSelected(qIndex, oIndex)">✓</span>
+                                </span>
+                                <span x-text="option"></span>
+                            </button>
+                        </template>
+                    </div>
+                    
+                    <p x-show="question.type === 'multiple-select'" class="text-sm text-slate-500 mt-3">
+                        Select all answers that apply
+                    </p>
+                </div>
+            </template>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="flex items-center justify-between">
+            <button @click="previousQuestion()" 
+                    x-show="currentQuestion > 0"
+                    class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors">
+                ← Previous
+            </button>
+            <div x-show="currentQuestion === 0"></div>
+            
+            <button @click="nextQuestion()" 
+                    x-show="currentQuestion < questions.length - 1"
+                    :disabled="!hasAnsweredCurrent()"
+                    class="px-4 py-2 bg-primary-500 hover:bg-primary-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors">
+                Next →
+            </button>
+            
+            <button @click="submitQuiz()" 
+                    x-show="currentQuestion === questions.length - 1"
+                    :disabled="!allQuestionsAnswered()"
+                    class="px-6 py-2 bg-green-500 hover:bg-green-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors">
+                Submit Quiz
+            </button>
+        </div>
+    </div>
+    
+    <!-- Quiz Results -->
+    <div x-show="completed" class="text-center">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-8 mb-6">
+            <!-- Score Display -->
+            <div class="mb-6">
+                <div class="text-6xl font-bold mb-2"
+                     :class="score >= {{ quiz.passing_score if quiz else 70 }} ? 'text-green-400' : 'text-red-400'"
+                     x-text="score + '%'"></div>
+                <p class="text-slate-400">
+                    You got <span class="text-white" x-text="correctCount"></span> out of <span class="text-white" x-text="questions.length"></span> questions correct
+                </p>
+            </div>
+            
+            <!-- Pass/Fail Message -->
+            <div x-show="score >= {{ quiz.passing_score if quiz else 70 }}" class="mb-6">
+                <span class="text-4xl block mb-2">🎉</span>
+                <h2 class="text-2xl font-bold text-green-400 mb-2">Congratulations!</h2>
+                <p class="text-slate-400">You passed the quiz!</p>
+            </div>
+            
+            <div x-show="score < {{ quiz.passing_score if quiz else 70 }}" class="mb-6">
+                <span class="text-4xl block mb-2">📚</span>
+                <h2 class="text-2xl font-bold text-amber-400 mb-2">Keep Learning!</h2>
+                <p class="text-slate-400">Review the material and try again.</p>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex items-center justify-center space-x-4">
+                <button @click="resetQuiz()" 
+                        class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors">
+                    Try Again
+                </button>
+                <button @click="showReview = true" 
+                        class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors">
+                    Review Answers
+                </button>
+            </div>
+        </div>
+        
+        <!-- Answer Review -->
+        <div x-show="showReview" class="text-left space-y-4">
+            <h3 class="text-xl font-semibold text-white mb-4">Answer Review</h3>
+            <template x-for="(question, qIndex) in questions" :key="qIndex">
+                <div class="bg-slate-800 border rounded-lg p-4"
+                     :class="isAnswerCorrect(qIndex) ? 'border-green-500/50' : 'border-red-500/50'">
+                    <div class="flex items-start justify-between mb-3">
+                        <span class="font-medium text-white" x-text="(qIndex + 1) + '. ' + question.text"></span>
+                        <span x-show="isAnswerCorrect(qIndex)" class="text-green-400">✓</span>
+                        <span x-show="!isAnswerCorrect(qIndex)" class="text-red-400">✗</span>
+                    </div>
+                    <div class="text-sm space-y-1">
+                        <p class="text-slate-400">
+                            Your answer: <span :class="isAnswerCorrect(qIndex) ? 'text-green-400' : 'text-red-400'" x-text="getUserAnswerText(question, qIndex)"></span>
+                        </p>
+                        <p x-show="!isAnswerCorrect(qIndex)" class="text-slate-400">
+                            Correct answer: <span class="text-green-400" x-text="getCorrectAnswerText(question)"></span>
+                        </p>
+                        <p x-show="question.explanation" class="text-slate-500 mt-2 italic" x-text="question.explanation"></p>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function quizComponent() {
+    return {
+        started: false,
+        completed: false,
+        currentQuestion: 0,
+        answers: [],
+        score: 0,
+        correctCount: 0,
+        showReview: false,
+        
+        // Sample questions - in production, these would come from the quiz data
+        questions: {{ (quiz.questions if quiz and quiz.questions else [
+            {"text": "What is a Large Language Model?", "options": ["A database", "A neural network trained on text", "A search engine", "A programming language"], "correct": 1, "explanation": "LLMs are neural networks trained on large amounts of text data."},
+            {"text": "What is the primary purpose of prompt engineering?", "options": ["To debug code", "To optimize model performance through careful input design", "To train new models", "To compress data"], "correct": 1, "explanation": "Prompt engineering focuses on crafting effective inputs to get better outputs from LLMs."},
+            {"text": "What does RAG stand for?", "options": ["Random Access Generation", "Retrieval-Augmented Generation", "Rapid Algorithm Generation", "Remote API Gateway"], "correct": 1, "explanation": "RAG combines retrieval of relevant documents with generation to improve accuracy."}
+        ]) | tojson }},
+        
+        init() {
+            // Initialize answers - arrays for multi-select, null for single choice
+            this.answers = this.questions.map(q => q.type === 'multiple-select' ? [] : null);
+        },
+        
+        startQuiz() {
+            this.started = true;
+        },
+        
+        selectAnswer(questionIndex, optionIndex) {
+            this.answers[questionIndex] = optionIndex;
+        },
+        
+        toggleMultiSelect(questionIndex, optionIndex) {
+            let current = this.answers[questionIndex];
+            if (!Array.isArray(current)) current = [];
+            
+            const idx = current.indexOf(optionIndex);
+            if (idx > -1) {
+                current.splice(idx, 1);
+            } else {
+                current.push(optionIndex);
+            }
+            this.answers[questionIndex] = [...current]; // Trigger reactivity
+        },
+        
+        isMultiSelected(questionIndex, optionIndex) {
+            const answer = this.answers[questionIndex];
+            return Array.isArray(answer) && answer.includes(optionIndex);
+        },
+        
+        previousQuestion() {
+            if (this.currentQuestion > 0) {
+                this.currentQuestion--;
+            }
+        },
+        
+        nextQuestion() {
+            if (this.currentQuestion < this.questions.length - 1) {
+                this.currentQuestion++;
+            }
+        },
+        
+        submitQuiz() {
+            // Calculate score
+            this.correctCount = this.questions.reduce((count, question, index) => {
+                const userAnswer = this.answers[index];
+                const correctAnswer = question.correct;
+                
+                let isCorrect = false;
+                
+                if (question.type === 'multiple-select') {
+                    // For multiple select, compare arrays
+                    if (Array.isArray(userAnswer) && Array.isArray(correctAnswer)) {
+                        isCorrect = userAnswer.length === correctAnswer.length && 
+                                   userAnswer.every(a => correctAnswer.includes(a));
+                    }
+                } else {
+                    // Handle both string and number comparisons for robustness
+                    isCorrect = userAnswer !== null && userAnswer !== undefined && 
+                                String(userAnswer).trim() === String(correctAnswer).trim();
+                }
+                return count + (isCorrect ? 1 : 0);
+            }, 0);
+            
+            this.score = Math.round((this.correctCount / this.questions.length) * 100);
+            this.completed = true;
+            
+            // Save completion if passed
+            if (this.score >= {{ quiz.passing_score if quiz else 70 }}) {
+                localStorage.setItem('completed_{{ quiz.id if quiz else (page.id if page else "") }}', 'true');
+            }
+        },
+        
+        resetQuiz() {
+            this.started = false;
+            this.completed = false;
+            this.currentQuestion = 0;
+            this.answers = this.questions.map(q => q.type === 'multiple-select' ? [] : null);
+            this.score = 0;
+            this.correctCount = 0;
+            this.showReview = false;
+        },
+        
+        isAnswerCorrect(qIndex) {
+            const question = this.questions[qIndex];
+            const userAnswer = this.answers[qIndex];
+            const correctAnswer = question.correct;
+            
+            if (question.type === 'multiple-select') {
+                if (Array.isArray(userAnswer) && Array.isArray(correctAnswer)) {
+                    return userAnswer.length === correctAnswer.length && 
+                           userAnswer.every(a => correctAnswer.includes(a));
+                }
+                return false;
+            } else {
+                return userAnswer !== null && userAnswer !== undefined && 
+                       String(userAnswer).trim() === String(correctAnswer).trim();
+            }
+        },
+        
+        getCorrectAnswerText(question) {
+            if (question.type === 'multiple-select' && Array.isArray(question.correct)) {
+                return question.correct.map(idx => question.options[idx]).join(', ');
+            }
+            return question.options[question.correct];
+        },
+        
+        getUserAnswerText(question, qIndex) {
+            const answer = this.answers[qIndex];
+            if (question.type === 'multiple-select' && Array.isArray(answer)) {
+                if (answer.length === 0) return 'No answer selected';
+                return answer.map(idx => question.options[idx]).join(', ');
+            }
+            if (answer === null || answer === undefined) return 'No answer selected';
+            return question.options[answer];
+        },
+        
+        hasAnsweredCurrent() {
+            const question = this.questions[this.currentQuestion];
+            const answer = this.answers[this.currentQuestion];
+            if (question.type === 'multiple-select') {
+                return Array.isArray(answer) && answer.length > 0;
+            }
+            return answer !== null && answer !== undefined;
+        },
+        
+        allQuestionsAnswered() {
+            return this.questions.every((question, idx) => {
+                const answer = this.answers[idx];
+                if (question.type === 'multiple-select') {
+                    return Array.isArray(answer) && answer.length > 0;
+                }
+                return answer !== null && answer !== undefined;
+            });
+        }
+    };
+}
+</script>
+{% endblock %}

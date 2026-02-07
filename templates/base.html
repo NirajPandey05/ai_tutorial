@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ title | default('AI Engineering Tutorial') }}{% endblock %}</title>
+    <meta name="description" content="{{ description | default('Learn AI Engineering - LLMs, RAG, Agents, MCP and more') }}">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AI Tutorial">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-144x144.svg">
+    <link rel="icon" type="image/svg+xml" href="/static/icons/icon-144x144.svg">
+    
+    <!-- TailwindCSS via CDN (will be replaced with build process in production) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        accent: {
+                            50: '#fdf4ff',
+                            100: '#fae8ff',
+                            200: '#f5d0fe',
+                            300: '#f0abfc',
+                            400: '#e879f9',
+                            500: '#d946ef',
+                            600: '#c026d3',
+                            700: '#a21caf',
+                            800: '#86198f',
+                            900: '#701a75',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Highlight.js for code syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+    
+    <!-- HTMX for interactivity -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <!-- Page-specific head content (loaded before Alpine.js) -->
+    {% block head %}{% endblock %}
+    
+    <!-- Progress Tracker (loaded before Alpine.js) -->
+    <script src="/static/js/progress-tracker.js"></script>
+    
+    <!-- Accessibility Manager -->
+    <script src="/static/js/accessibility.js"></script>
+    
+    <!-- Alpine.js for reactive components -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then(registration => {
+                        console.log('SW registered:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('SW registration failed:', error);
+                    });
+            });
+        }
+    </script>
+    
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        
+        /* Code block styling */
+        pre code.hljs {
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+        
+        /* Smooth transitions */
+        .sidebar-link {
+            transition: all 0.2s ease;
+        }
+        
+        /* Accessibility: Screen reader only */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        
+        /* Accessibility: Focus visible when parent is focused */
+        .sr-only.focus-within\:not-sr-only:focus-within,
+        .sr-only:focus,
+        .sr-only:active {
+            position: static;
+            width: auto;
+            height: auto;
+            padding: 0;
+            margin: 0;
+            overflow: visible;
+            clip: auto;
+            white-space: normal;
+        }
+        
+        /* Skip link styling */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: #0ea5e9;
+            color: white;
+            padding: 8px 16px;
+            z-index: 100;
+            transition: top 0.3s;
+        }
+        
+        .skip-link:focus {
+            top: 0;
+        }
+        
+        /* High contrast mode */
+        html.high-contrast {
+            filter: contrast(1.3);
+        }
+        
+        html.high-contrast .bg-slate-800 {
+            background-color: #000 !important;
+        }
+        
+        html.high-contrast .text-slate-400,
+        html.high-contrast .text-slate-500 {
+            color: #fff !important;
+        }
+        
+        html.high-contrast .border-slate-700 {
+            border-color: #fff !important;
+        }
+        
+        /* Reduce motion */
+        html.reduce-motion *,
+        html.reduce-motion *::before,
+        html.reduce-motion *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+        
+        /* Large text mode */
+        html.large-text {
+            font-size: 120%;
+        }
+        
+        /* Custom focus indicators */
+        html.focus-visible .focus-visible-custom {
+            outline: 3px solid #38bdf8 !important;
+            outline-offset: 2px !important;
+        }
+        
+        /* Better focus for all focusable elements */
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible,
+        [tabindex]:focus-visible {
+            outline: 2px solid #38bdf8;
+            outline-offset: 2px;
+        }
+        
+        /* Progress bar animation */
+        .progress-bar {
+            transition: width 0.5s ease;
+        }
+        
+        /* Print styles */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            
+            aside, header, .skip-links, button, .no-print {
+                display: none !important;
+            }
+            
+            main {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 20px !important;
+            }
+            
+            .prose {
+                color: black !important;
+            }
+            
+            .prose h1, .prose h2, .prose h3 {
+                color: black !important;
+            }
+            
+            .prose code {
+                background: #f1f5f9 !important;
+                color: #0f172a !important;
+            }
+            
+            .prose pre {
+                background: #f1f5f9 !important;
+                border: 1px solid #e2e8f0 !important;
+            }
+            
+            a {
+                color: black !important;
+                text-decoration: underline !important;
+            }
+            
+            a[href]::after {
+                content: " (" attr(href) ")";
+                font-size: 0.8em;
+            }
+        }
+        
+        /* Responsive utilities */
+        @media (max-width: 768px) {
+            .sidebar-mobile-hidden {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar-mobile-visible {
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body class="h-full bg-slate-900 text-slate-100" x-data="{ sidebarOpen: window.innerWidth > 768 }">
+    <!-- Skip Links for Accessibility -->
+    <div class="skip-links">
+        <a href="#main-content" class="skip-link">Skip to main content</a>
+        <a href="#navigation" class="skip-link">Skip to navigation</a>
+    </div>
+    
+    <div class="flex h-full">
+        <!-- Sidebar -->
+        <aside 
+            id="navigation"
+            role="navigation"
+            aria-label="Main navigation"
+            class="w-64 bg-slate-800 border-r border-slate-700 flex flex-col transition-all duration-300"
+            :class="{ 'w-64': sidebarOpen, 'w-16': !sidebarOpen }"
+        >
+            <!-- Logo -->
+            <div class="p-4 border-b border-slate-700">
+                <a href="/" class="flex items-center space-x-2" aria-label="AI Tutorial Home">
+                    <span class="text-2xl" aria-hidden="true">🤖</span>
+                    <span class="font-bold text-lg" x-show="sidebarOpen">AI Tutorial</span>
+                </a>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="flex-1 overflow-y-auto p-4" aria-label="Module navigation">
+                <div class="space-y-2" x-show="sidebarOpen">
+                    <!-- Learning Paths -->
+                    <a href="/learning-paths" class="sidebar-link flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white">
+                        <span aria-hidden="true">🎯</span>
+                        <span>Learning Paths</span>
+                    </a>
+                    
+                    <!-- My Progress -->
+                    <a href="/progress" class="sidebar-link flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white">
+                        <span aria-hidden="true">📊</span>
+                        <span>My Progress</span>
+                    </a>
+                    
+                    <div class="pt-4 pb-2">
+                        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Modules</span>
+                    </div>
+                    
+                    <!-- Dynamic Module Navigation -->
+                    {% if all_modules %}
+                    {% for module in all_modules %}
+                    <div x-data="{ open: false }">
+                        <div class="sidebar-link flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white">
+                            <a href="/learn/{{ module.id }}" class="flex items-center space-x-2 flex-1 min-w-0">
+                                <span>{{ module.icon }}</span>
+                                <span class="truncate">{{ module.title }}</span>
+                            </a>
+                            <button @click.prevent="open = !open" class="p-1 hover:bg-slate-600 rounded flex-shrink-0">
+                                <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div x-show="open" x-collapse class="ml-6 mt-1 space-y-1">
+                            {% for section in module.sections %}
+                            <a href="/learn/{{ module.id }}/{{ section.id }}" class="block px-3 py-1.5 text-sm text-slate-400 hover:text-white rounded hover:bg-slate-700">
+                                {{ section.icon }} {{ section.title }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <!-- Fallback static navigation -->
+                    <div x-data="{ open: false }">
+                        <div class="sidebar-link flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white">
+                            <a href="/learn/llm-fundamentals" class="flex items-center space-x-2 flex-1 min-w-0">
+                                <span>🧠</span>
+                                <span>LLM Fundamentals</span>
+                            </a>
+                            <button @click.prevent="open = !open" class="p-1 hover:bg-slate-600 rounded flex-shrink-0">
+                                <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div x-show="open" x-collapse class="ml-6 mt-1 space-y-1">
+                            <!-- Sections would go here -->
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="pt-4 pb-2">
+                        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Resources</span>
+                    </div>
+                    
+                    <a href="/labs" class="sidebar-link flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white">
+                        <span>🧪</span>
+                        <span>Interactive Labs</span>
+                    </a>
+                    
+                    <a href="/quizzes" class="sidebar-link flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white">
+                        <span>📝</span>
+                        <span>Knowledge Quizzes</span>
+                    </a>
+                    
+                    <a href="/challenges" class="sidebar-link flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white">
+                        <span>💻</span>
+                        <span>Coding Challenges</span>
+                    </a>
+                    
+                    <a href="/tools" class="sidebar-link flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white">
+                        <span>🛠️</span>
+                        <span>Tools</span>
+                    </a>
+                    
+                    <a href="/achievements" class="sidebar-link flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white">
+                        <span>🏆</span>
+                        <span>Achievements</span>
+                    </a>
+                    
+                    <div class="pt-4 pb-2">
+                        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Reference</span>
+                    </div>
+                    
+                    <a href="/glossary" class="sidebar-link flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white">
+                        <span>📖</span>
+                        <span>Glossary</span>
+                    </a>
+                    
+                    <a href="/case-studies" class="sidebar-link flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white">
+                        <span>📊</span>
+                        <span>Case Studies</span>
+                    </a>
+                    
+                    <a href="/decision-guides" class="sidebar-link flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white">
+                        <span>🧭</span>
+                        <span>Decision Guides</span>
+                    </a>
+                    
+                    <a href="/failure-modes" class="sidebar-link flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white">
+                        <span>⚠️</span>
+                        <span>Failure Modes</span>
+                    </a>
+                    
+                    <a href="/about" class="sidebar-link flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white">
+                        <span>ℹ️</span>
+                        <span>About</span>
+                    </a>
+                </div>
+            </nav>
+            
+            <!-- Settings link at bottom -->
+            <div class="p-4 border-t border-slate-700">
+                <a href="/settings" class="sidebar-link flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white">
+                    <span aria-hidden="true">⚙️</span>
+                    <span x-show="sidebarOpen">Settings</span>
+                </a>
+                
+                <!-- Accessibility Toggle Button -->
+                <button onclick="AccessibilityManager.toggleAccessibilityPanel()" 
+                        class="sidebar-link flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white w-full mt-2"
+                        aria-label="Open accessibility settings">
+                    <span aria-hidden="true">♿</span>
+                    <span x-show="sidebarOpen">Accessibility</span>
+                </button>
+            </div>
+        </aside>
+        
+        <!-- Main content -->
+        <main id="main-content" role="main" class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top bar -->
+            <header role="banner" class="h-14 bg-slate-800 border-b border-slate-700 flex items-center justify-between px-4">
+                <div class="flex items-center space-x-4">
+                    <button @click="sidebarOpen = !sidebarOpen" 
+                            class="p-2 rounded-lg hover:bg-slate-700"
+                            aria-label="Toggle sidebar navigation"
+                            :aria-expanded="sidebarOpen">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                    
+                    <!-- Breadcrumb -->
+                    <nav aria-label="Breadcrumb" class="flex items-center space-x-2 text-sm text-slate-400">
+                        {% block breadcrumb %}
+                        {% if breadcrumbs %}
+                            <ol class="flex items-center space-x-2">
+                            {% for crumb in breadcrumbs %}
+                                {% if not loop.first %}
+                                <li aria-hidden="true">/</li>
+                                {% endif %}
+                                <li>
+                                {% if crumb.url %}
+                                <a href="{{ crumb.url }}" class="hover:text-white">{{ crumb.title }}</a>
+                                {% else %}
+                                <span class="text-white" aria-current="page">{{ crumb.title }}</span>
+                                {% endif %}
+                                </li>
+                            {% endfor %}
+                            </ol>
+                        {% else %}
+                        <a href="/" class="hover:text-white">Home</a>
+                        {% endif %}
+                        {% endblock %}
+                    </nav>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- Progress indicator -->
+                    <div class="flex items-center space-x-2 hidden sm:flex" 
+                         x-data="{ progress: 0 }"
+                         x-init="progress = ProgressTracker.getStats().overallProgress || 0">
+                        <span class="text-sm text-slate-400">Progress:</span>
+                        <div class="w-24 h-2 bg-slate-700 rounded-full overflow-hidden">
+                            <div class="progress-bar h-full bg-primary-500" :style="'width: ' + progress + '%'"></div>
+                        </div>
+                        <span class="text-sm text-slate-400" x-text="progress + '%'">0%</span>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Page content -->
+            <div class="flex-1 overflow-y-auto">
+                {% block content %}
+                <!-- Content goes here -->
+                {% endblock %}
+            </div>
+        </main>
+    </div>
+    
+    <!-- Initialize highlight.js -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            hljs.highlightAll();
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

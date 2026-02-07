@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+
+{% block title %}Learning Paths - AI Engineering Tutorial{% endblock %}
+
+{% block head %}
+<script src="/static/js/progress-tracker.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-6 py-12" x-data="learningPathsManager()">
+    <!-- Header -->
+    <div class="text-center mb-12">
+        <span class="text-5xl mb-4 block">🎯</span>
+        <h1 class="text-3xl font-bold text-white mb-2">Learning Paths</h1>
+        <p class="text-slate-400">Choose a structured path based on your goals and experience level</p>
+    </div>
+    
+    <!-- Active Path Banner (if user has started a path) -->
+    <template x-if="activePath">
+        <div class="bg-gradient-to-r from-primary-500/20 to-accent-500/20 border border-primary-500/30 rounded-xl p-6 mb-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <span class="text-4xl" x-text="activePath.icon">🚀</span>
+                    <div>
+                        <p class="text-sm text-primary-400">Continue Learning</p>
+                        <h2 class="text-xl font-semibold text-white" x-text="activePath.title">Path Title</h2>
+                        <div class="flex items-center gap-4 mt-2 text-sm text-slate-400">
+                            <span x-text="activePath.progress + '% complete'">0% complete</span>
+                            <span>•</span>
+                            <span x-text="activePath.remainingTime + ' remaining'">0 hours remaining</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="w-32">
+                        <div class="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-primary-500 to-accent-500 transition-all duration-500" 
+                                 :style="'width: ' + activePath.progress + '%'"></div>
+                        </div>
+                    </div>
+                    <a :href="activePath.continueUrl" 
+                       class="px-6 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors">
+                        Continue
+                    </a>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <!-- Path Selection -->
+    <div class="space-y-6">
+        {% for path in all_paths %}
+        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden transition-all duration-300 hover:border-primary-500/50"
+             x-data="{ 
+                expanded: false,
+                progress: 0,
+                init() {
+                    this.calculateProgress();
+                }
+             }"
+             @click="expanded = !expanded">
+            
+            <!-- Path Header -->
+            <div class="p-6 cursor-pointer">
+                <div class="flex items-start justify-between">
+                    <div class="flex items-start space-x-4">
+                        <span class="text-4xl">{{ path.icon }}</span>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3">
+                                <h2 class="text-xl font-semibold text-white">{{ path.title }}</h2>
+                                {% if path.id == 'quick-start' %}
+                                <span class="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded-full">Recommended</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-slate-400 mt-1">{{ path.description }}</p>
+                            
+                            <!-- Path Stats -->
+                            <div class="flex items-center flex-wrap gap-4 mt-3 text-sm text-slate-500">
+                                <span class="flex items-center gap-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    {{ path.estimated_hours }} hours
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                    </svg>
+                                    {{ path.modules|length }} modules
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                    </svg>
+                                    {{ path.target_audience }}
+                                </span>
+                            </div>
+                            
+                            <!-- Progress Bar (if started) -->
+                            <div x-show="progress > 0" class="mt-4">
+                                <div class="flex items-center justify-between text-sm mb-1">
+                                    <span class="text-slate-400">Your Progress</span>
+                                    <span class="text-primary-400" x-text="progress + '%'">0%</span>
+                                </div>
+                                <div class="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+                                    <div class="h-full bg-primary-500 transition-all duration-500" :style="'width: ' + progress + '%'"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Button -->
+                    <div class="flex items-center space-x-3" @click.stop>
+                        <a href="/path/{{ path.id }}" 
+                           class="px-4 py-2 rounded-lg transition-colors"
+                           :class="progress > 0 ? 'bg-primary-600 hover:bg-primary-700' : 'bg-slate-700 hover:bg-slate-600'">
+                            <span x-text="progress > 0 ? 'Continue' : 'Start Path'">Start Path</span>
+                        </a>
+                        <button class="p-2 text-slate-400 hover:text-white transition-colors">
+                            <svg class="w-5 h-5 transition-transform" :class="{ 'rotate-180': expanded }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Expanded Content -->
+            <div x-show="expanded" x-collapse class="border-t border-slate-700">
+                <div class="p-6 space-y-6">
+                    <!-- Learning Outcomes -->
+                    {% if path.outcomes %}
+                    <div>
+                        <h3 class="text-sm font-semibold text-slate-300 mb-3">What You'll Learn</h3>
+                        <div class="grid md:grid-cols-2 gap-2">
+                            {% for outcome in path.outcomes %}
+                            <div class="flex items-center space-x-2 text-sm text-slate-400">
+                                <svg class="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span>{{ outcome }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Module List -->
+                    <div>
+                        <h3 class="text-sm font-semibold text-slate-300 mb-3">Modules in This Path</h3>
+                        <div class="space-y-2">
+                            {% for module_id in path.modules %}
+                            {% set module = all_modules_dict.get(module_id) %}
+                            {% if module %}
+                            <div class="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg"
+                                 x-data="{ 
+                                    moduleProgress: 0,
+                                    init() {
+                                        // Calculate progress for this module
+                                        let completed = 0;
+                                        let total = {{ module.total_items }};
+                                        {% for section in module.sections %}
+                                        {% for page in section.pages %}
+                                        if (localStorage.getItem('completed_{{ page.id }}') === 'true' || 
+                                            ProgressTracker.isComplete('{{ page.id }}')) completed++;
+                                        {% endfor %}
+                                        {% for lab in section.labs %}
+                                        if (localStorage.getItem('completed_{{ lab.id }}') === 'true' ||
+                                            ProgressTracker.isComplete('{{ lab.id }}')) completed++;
+                                        {% endfor %}
+                                        {% endfor %}
+                                        this.moduleProgress = total > 0 ? Math.round((completed / total) * 100) : 0;
+                                    }
+                                 }">
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-xl">{{ module.icon }}</span>
+                                    <div>
+                                        <a href="/learn/{{ module.id }}" class="font-medium text-white hover:text-primary-400 transition-colors">
+                                            {{ module.title }}
+                                        </a>
+                                        <div class="text-xs text-slate-500">{{ module.sections|length }} sections · {{ module.total_time }} min</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-20">
+                                        <div class="w-full h-1.5 bg-slate-600 rounded-full overflow-hidden">
+                                            <div class="h-full bg-primary-500 transition-all duration-500" :style="'width: ' + moduleProgress + '%'"></div>
+                                        </div>
+                                    </div>
+                                    <span class="text-sm text-slate-400 w-10 text-right" x-text="moduleProgress + '%'">0%</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Browse All Modules Section -->
+    <div class="mt-16">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="text-2xl font-bold text-white">📚 All Modules</h2>
+                <p class="text-slate-400 mt-1">Or explore modules individually at your own pace</p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button @click="viewMode = 'grid'" 
+                        class="p-2 rounded transition-colors"
+                        :class="viewMode === 'grid' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-white'">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                    </svg>
+                </button>
+                <button @click="viewMode = 'list'" 
+                        class="p-2 rounded transition-colors"
+                        :class="viewMode === 'list' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-white'">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Filter by Difficulty -->
+        <div class="flex items-center space-x-2 mb-6">
+            <span class="text-sm text-slate-400">Filter:</span>
+            <button @click="difficultyFilter = 'all'" 
+                    class="px-3 py-1 text-sm rounded-full transition-colors"
+                    :class="difficultyFilter === 'all' ? 'bg-primary-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'">
+                All
+            </button>
+            <button @click="difficultyFilter = 'beginner'" 
+                    class="px-3 py-1 text-sm rounded-full transition-colors"
+                    :class="difficultyFilter === 'beginner' ? 'bg-green-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'">
+                Beginner
+            </button>
+            <button @click="difficultyFilter = 'intermediate'" 
+                    class="px-3 py-1 text-sm rounded-full transition-colors"
+                    :class="difficultyFilter === 'intermediate' ? 'bg-amber-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'">
+                Intermediate
+            </button>
+            <button @click="difficultyFilter = 'advanced'" 
+                    class="px-3 py-1 text-sm rounded-full transition-colors"
+                    :class="difficultyFilter === 'advanced' ? 'bg-red-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'">
+                Advanced
+            </button>
+        </div>
+        
+        <!-- Grid View -->
+        <div x-show="viewMode === 'grid'" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for module in all_modules %}
+            <a href="/learn/{{ module.id }}" 
+               class="bg-slate-800 rounded-xl p-5 border border-slate-700 hover:border-primary-500 transition-all duration-300 group"
+               x-show="difficultyFilter === 'all' || difficultyFilter === '{{ module.difficulty.value if module.difficulty else 'intermediate' }}'"
+               x-data="{
+                    progress: 0,
+                    init() {
+                        let completed = 0;
+                        let total = {{ module.total_items }};
+                        {% for section in module.sections %}
+                        {% for page in section.pages %}
+                        if (ProgressTracker.isComplete('{{ page.id }}')) completed++;
+                        {% endfor %}
+                        {% for lab in section.labs %}
+                        if (ProgressTracker.isComplete('{{ lab.id }}')) completed++;
+                        {% endfor %}
+                        {% endfor %}
+                        this.progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+                    }
+               }">
+                <div class="flex items-start justify-between mb-3">
+                    <span class="text-3xl">{{ module.icon }}</span>
+                    <span class="px-2 py-0.5 text-xs rounded-full
+                        {% if module.difficulty and module.difficulty.value == 'beginner' %}
+                        bg-green-500/20 text-green-400
+                        {% elif module.difficulty and module.difficulty.value == 'advanced' %}
+                        bg-red-500/20 text-red-400
+                        {% elif module.difficulty and module.difficulty.value == 'expert' %}
+                        bg-purple-500/20 text-purple-400
+                        {% else %}
+                        bg-amber-500/20 text-amber-400
+                        {% endif %}
+                    ">
+                        {{ module.difficulty.value|title if module.difficulty else 'Intermediate' }}
+                    </span>
+                </div>
+                <h3 class="font-semibold text-white group-hover:text-primary-400 transition-colors mb-2">
+                    {{ module.title }}
+                </h3>
+                <p class="text-sm text-slate-400 mb-4 line-clamp-2">{{ module.description }}</p>
+                
+                <!-- Progress -->
+                <div class="mb-3">
+                    <div class="flex items-center justify-between text-xs mb-1">
+                        <span class="text-slate-500">Progress</span>
+                        <span class="text-slate-400" x-text="progress + '%'">0%</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-primary-500 transition-all duration-500" :style="'width: ' + progress + '%'"></div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between text-xs text-slate-500">
+                    <span>{{ module.sections|length }} sections</span>
+                    <span>{{ module.total_time }} min</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        
+        <!-- List View -->
+        <div x-show="viewMode === 'list'" class="space-y-3">
+            {% for module in all_modules %}
+            <a href="/learn/{{ module.id }}" 
+               class="flex items-center justify-between p-4 bg-slate-800 rounded-lg border border-slate-700 hover:border-primary-500 transition-all duration-300 group"
+               x-show="difficultyFilter === 'all' || difficultyFilter === '{{ module.difficulty.value if module.difficulty else 'intermediate' }}'"
+               x-data="{
+                    progress: 0,
+                    init() {
+                        let completed = 0;
+                        let total = {{ module.total_items }};
+                        {% for section in module.sections %}
+                        {% for page in section.pages %}
+                        if (ProgressTracker.isComplete('{{ page.id }}')) completed++;
+                        {% endfor %}
+                        {% for lab in section.labs %}
+                        if (ProgressTracker.isComplete('{{ lab.id }}')) completed++;
+                        {% endfor %}
+                        {% endfor %}
+                        this.progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+                    }
+               }">
+                <div class="flex items-center space-x-4">
+                    <span class="text-2xl">{{ module.icon }}</span>
+                    <div>
+                        <h3 class="font-semibold text-white group-hover:text-primary-400 transition-colors">
+                            {{ module.title }}
+                        </h3>
+                        <div class="flex items-center gap-3 text-sm text-slate-500 mt-1">
+                            <span>{{ module.sections|length }} sections</span>
+                            <span>•</span>
+                            <span>{{ module.total_time }} min</span>
+                            <span>•</span>
+                            <span class="
+                                {% if module.difficulty and module.difficulty.value == 'beginner' %}
+                                text-green-400
+                                {% elif module.difficulty and module.difficulty.value == 'advanced' %}
+                                text-red-400
+                                {% else %}
+                                text-amber-400
+                                {% endif %}
+                            ">
+                                {{ module.difficulty.value|title if module.difficulty else 'Intermediate' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="w-32">
+                        <div class="flex items-center justify-between text-xs mb-1">
+                            <span class="text-slate-500">Progress</span>
+                            <span class="text-slate-400" x-text="progress + '%'">0%</span>
+                        </div>
+                        <div class="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                            <div class="h-full bg-primary-500 transition-all duration-500" :style="'width: ' + progress + '%'"></div>
+                        </div>
+                    </div>
+                    <svg class="w-5 h-5 text-slate-500 group-hover:text-primary-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function learningPathsManager() {
+    return {
+        viewMode: 'grid',
+        difficultyFilter: 'all',
+        activePath: null,
+        
+        init() {
+            this.loadActivePath();
+        },
+        
+        loadActivePath() {
+            // Check if user has an active learning path
+            const pathProgress = ProgressTracker.data.learningPaths || {};
+            
+            for (const [pathId, data] of Object.entries(pathProgress)) {
+                if (data.progress > 0 && data.progress < 100) {
+                    // Found an in-progress path
+                    this.activePath = {
+                        id: pathId,
+                        icon: this.getPathIcon(pathId),
+                        title: this.getPathTitle(pathId),
+                        progress: data.progress,
+                        remainingTime: this.calculateRemainingTime(pathId, data.progress),
+                        continueUrl: `/path/${pathId}`
+                    };
+                    break;
+                }
+            }
+        },
+        
+        getPathIcon(pathId) {
+            const icons = {
+                'quick-start': '🚀',
+                'rag-engineer': '📚',
+                'agent-developer': '🤖',
+                'complete': '🎓'
+            };
+            return icons[pathId] || '📖';
+        },
+        
+        getPathTitle(pathId) {
+            const titles = {
+                'quick-start': 'Quick Start',
+                'rag-engineer': 'RAG Engineer',
+                'agent-developer': 'Agent Developer',
+                'complete': 'Complete AI Engineer'
+            };
+            return titles[pathId] || pathId;
+        },
+        
+        calculateRemainingTime(pathId, progress) {
+            const totalHours = {
+                'quick-start': 2,
+                'rag-engineer': 8,
+                'agent-developer': 12,
+                'complete': 50
+            };
+            
+            const total = totalHours[pathId] || 10;
+            const remaining = Math.ceil(total * (100 - progress) / 100);
+            
+            if (remaining < 1) return 'Less than 1 hour';
+            if (remaining === 1) return '1 hour';
+            return `${remaining} hours`;
+        },
+        
+        calculateProgress(pathId) {
+            // Calculate actual progress based on completed items
+            // This would need path module data to calculate properly
+            return 0;
+        }
+    };
+}
+</script>
+{% endblock %}

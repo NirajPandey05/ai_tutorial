@@ -1,0 +1,709 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .comparison-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1rem;
+    }
+    
+    .provider-panel {
+        background: #1e293b;
+        border-radius: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        min-height: 400px;
+    }
+    
+    .provider-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid #334155;
+    }
+    
+    .provider-logo {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .provider-logo-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+    }
+    
+    .provider-stats {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+    
+    .provider-content {
+        flex: 1;
+        padding: 1rem;
+        overflow-y: auto;
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+    
+    .provider-content.loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+    }
+    
+    .provider-content.error {
+        color: #f87171;
+    }
+    
+    .provider-content pre {
+        background: #0f172a;
+        padding: 0.75rem;
+        border-radius: 0.375rem;
+        overflow-x: auto;
+        font-size: 0.8rem;
+    }
+    
+    .provider-content code {
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .prompt-input {
+        background: #0f172a;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .metrics-bar {
+        display: flex;
+        gap: 2rem;
+        padding: 1rem;
+        background: #1e293b;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .metric {
+        text-align: center;
+    }
+    
+    .metric-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #38bdf8;
+    }
+    
+    .metric-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        text-transform: uppercase;
+    }
+    
+    .diff-highlight {
+        background: #fef3c7;
+        color: #92400e;
+        padding: 0 2px;
+        border-radius: 2px;
+    }
+    
+    .spinner {
+        width: 24px;
+        height: 24px;
+        border: 2px solid #334155;
+        border-top-color: #38bdf8;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .toggle-group {
+        display: flex;
+        background: #334155;
+        border-radius: 0.375rem;
+        padding: 2px;
+    }
+    
+    .toggle-btn {
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #94a3b8;
+    }
+    
+    .toggle-btn.active {
+        background: #0ea5e9;
+        color: white;
+    }
+    
+    .model-select {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 0.25rem;
+        color: #e2e8f0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="p-6" x-data="comparisonApp()" x-init="init()">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-white flex items-center gap-3">
+            <span>⚖️</span>
+            Provider Comparison
+        </h1>
+        <p class="text-slate-400 mt-1">Compare responses from different LLM providers side-by-side</p>
+    </div>
+    
+    <!-- Prompt Input -->
+    <div class="prompt-input">
+        <div class="flex items-start gap-4">
+            <div class="flex-1">
+                <label class="block text-sm text-slate-400 mb-2">Prompt</label>
+                <textarea 
+                    x-model="prompt"
+                    rows="3"
+                    class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white resize-none focus:outline-none focus:border-primary-500"
+                    placeholder="Enter your prompt to compare across providers..."
+                ></textarea>
+            </div>
+            <div class="space-y-2">
+                <button 
+                    @click="compare()"
+                    :disabled="!prompt.trim() || isLoading"
+                    class="px-6 py-3 bg-primary-500 hover:bg-primary-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors">
+                    <span x-show="!isLoading">Compare</span>
+                    <span x-show="isLoading">Comparing...</span>
+                </button>
+                <div class="flex gap-2">
+                    <button @click="loadExample('creative')" class="text-xs px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300">Creative</button>
+                    <button @click="loadExample('code')" class="text-xs px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300">Code</button>
+                    <button @click="loadExample('analysis')" class="text-xs px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300">Analysis</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Provider Selection -->
+        <div class="mt-4 flex items-center gap-4">
+            <span class="text-sm text-slate-400">Providers:</span>
+            <template x-for="provider in allProviders" :key="provider.id">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input 
+                        type="checkbox" 
+                        :value="provider.id"
+                        x-model="selectedProviders"
+                        class="rounded bg-slate-700 border-slate-600 text-primary-500 focus:ring-primary-500">
+                    <span class="text-sm text-slate-300" x-text="provider.name"></span>
+                </label>
+            </template>
+        </div>
+    </div>
+    
+    <!-- Metrics Summary -->
+    <div class="metrics-bar" x-show="Object.keys(responses).length > 0">
+        <div class="metric">
+            <div class="metric-value" x-text="fastestProvider"></div>
+            <div class="metric-label">Fastest</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value" x-text="avgResponseTime + 'ms'"></div>
+            <div class="metric-label">Avg Time</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value" x-text="totalTokens"></div>
+            <div class="metric-label">Total Tokens</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value" x-text="'$' + totalCost"></div>
+            <div class="metric-label">Est. Cost</div>
+        </div>
+    </div>
+    
+    <!-- Comparison Grid -->
+    <div class="comparison-grid">
+        <template x-for="provider in selectedProviders" :key="provider">
+            <div class="provider-panel">
+                <div class="provider-header">
+                    <div class="provider-logo">
+                        <div class="provider-logo-icon" :style="{ background: getProviderColor(provider) }">
+                            <span x-text="getProviderIcon(provider)"></span>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-white" x-text="getProviderName(provider)"></span>
+                            <select 
+                                x-model="selectedModels[provider]"
+                                class="model-select ml-2">
+                                <template x-for="model in getModelsForProvider(provider)" :key="model">
+                                    <option :value="model" x-text="model"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="provider-stats" x-show="responses[provider]">
+                        <span x-text="(responses[provider]?.time || 0) + 'ms'"></span>
+                        <span x-text="(responses[provider]?.tokens || 0) + ' tokens'"></span>
+                    </div>
+                </div>
+                
+                <div class="provider-content" 
+                     :class="{ 'loading': loading[provider], 'error': errors[provider] }">
+                    <template x-if="loading[provider]">
+                        <div class="flex flex-col items-center gap-2">
+                            <div class="spinner"></div>
+                            <span>Generating...</span>
+                        </div>
+                    </template>
+                    
+                    <template x-if="errors[provider]">
+                        <div class="text-center">
+                            <span class="text-2xl mb-2 block">⚠️</span>
+                            <p x-text="errors[provider]"></p>
+                            <p class="text-sm text-slate-500 mt-2">Configure API key in Settings</p>
+                        </div>
+                    </template>
+                    
+                    <template x-if="!loading[provider] && !errors[provider] && responses[provider]">
+                        <div x-html="formatResponse(responses[provider].content)"></div>
+                    </template>
+                    
+                    <template x-if="!loading[provider] && !errors[provider] && !responses[provider]">
+                        <div class="text-center text-slate-500">
+                            <p>Response will appear here</p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </template>
+    </div>
+    
+    <!-- No providers selected -->
+    <div x-show="selectedProviders.length === 0" class="text-center py-12 text-slate-500">
+        <p class="text-lg">Select at least one provider to compare</p>
+    </div>
+    
+    <!-- Educational Note -->
+    <div class="mt-6 bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+        <h3 class="text-sm font-semibold text-slate-300 mb-2">💡 About Provider Comparison</h3>
+        <div class="text-sm text-slate-400 space-y-2">
+            <p>
+                <strong>Response Quality:</strong> Different models excel at different tasks. GPT-4 and Claude are 
+                great for complex reasoning, while smaller models are faster for simple tasks.
+            </p>
+            <p>
+                <strong>Timing:</strong> Response times vary based on model size, prompt complexity, and server load.
+                Smaller models (GPT-3.5, Haiku, Flash) are typically faster.
+            </p>
+            <p>
+                <strong>Note:</strong> This demo uses simulated responses. Connect your API keys in Settings for real comparisons.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function comparisonApp() {
+    return {
+        prompt: '',
+        selectedProviders: ['openai', 'anthropic'],
+        selectedModels: {
+            openai: 'gpt-5.2',
+            anthropic: 'claude-opus-4.5',
+            google: 'gemini-3-pro',
+            xai: 'grok-2'
+        },
+        responses: {},
+        loading: {},
+        errors: {},
+        isLoading: false,
+        
+        allProviders: [
+            { id: 'openai', name: 'OpenAI', icon: '🤖', color: '#10a37f' },
+            { id: 'anthropic', name: 'Anthropic', icon: '🅰️', color: '#d97706' },
+            { id: 'google', name: 'Google', icon: '🔷', color: '#4285f4' },
+            { id: 'xai', name: 'xAI', icon: '⚡', color: '#6366f1' }
+        ],
+        
+        modelOptions: {
+            openai: ['gpt-5.2', 'gpt-5.1', 'gpt-4.1', 'gpt-4.1-mini'],
+            anthropic: ['claude-opus-4.5', 'claude-sonnet-4.5', 'claude-opus-4', 'claude-sonnet-4'],
+            google: ['gemini-3-pro', 'gemini-3-flash', 'gemini-2.5-pro', 'gemini-2.5-flash'],
+            xai: ['grok-2', 'grok-beta']
+        },
+        
+        init() {
+            // Load example prompt
+            this.loadExample('creative');
+        },
+        
+        getProviderName(id) {
+            const provider = this.allProviders.find(p => p.id === id);
+            return provider ? provider.name : id;
+        },
+        
+        getProviderIcon(id) {
+            const provider = this.allProviders.find(p => p.id === id);
+            return provider ? provider.icon : '🤖';
+        },
+        
+        getProviderColor(id) {
+            const provider = this.allProviders.find(p => p.id === id);
+            return provider ? provider.color : '#64748b';
+        },
+        
+        getModelsForProvider(id) {
+            return this.modelOptions[id] || [];
+        },
+        
+        loadExample(type) {
+            const examples = {
+                creative: 'Write a short poem about a programmer who discovers their code has become sentient.',
+                code: 'Write a Python function that implements binary search on a sorted list. Include docstring and type hints.',
+                analysis: 'Compare the pros and cons of microservices vs monolithic architecture for a startup building an e-commerce platform.'
+            };
+            this.prompt = examples[type] || '';
+        },
+        
+        async compare() {
+            if (!this.prompt.trim() || this.selectedProviders.length === 0) return;
+            
+            this.isLoading = true;
+            this.responses = {};
+            this.errors = {};
+            
+            // Set all selected providers to loading
+            this.selectedProviders.forEach(p => {
+                this.loading[p] = true;
+            });
+            
+            // Simulate parallel API calls (in production, these would be real API calls)
+            const promises = this.selectedProviders.map(async (provider) => {
+                try {
+                    // Simulate API call with varying response times
+                    const delay = this.getSimulatedDelay(provider);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    
+                    // Check if API key is configured
+                    const apiKey = localStorage.getItem(`apiKey_${provider}`);
+                    
+                    if (!apiKey) {
+                        // Generate mock response for demo
+                        const response = this.generateMockResponse(provider);
+                        this.responses[provider] = {
+                            content: response.content,
+                            time: delay,
+                            tokens: response.tokens,
+                            cost: response.cost
+                        };
+                    } else {
+                        // In production, make real API call here
+                        // const response = await this.callAPI(provider, this.prompt);
+                        const response = this.generateMockResponse(provider);
+                        this.responses[provider] = {
+                            content: response.content,
+                            time: delay,
+                            tokens: response.tokens,
+                            cost: response.cost
+                        };
+                    }
+                } catch (error) {
+                    this.errors[provider] = error.message || 'Failed to generate response';
+                } finally {
+                    this.loading[provider] = false;
+                }
+            });
+            
+            await Promise.all(promises);
+            this.isLoading = false;
+        },
+        
+        getSimulatedDelay(provider) {
+            const model = this.selectedModels[provider];
+            const baseDelays = {
+                'gpt-4o': 1500,
+                'gpt-4o-mini': 800,
+                'gpt-3.5-turbo': 600,
+                'o1-mini': 2000,
+                'claude-3-5-sonnet': 1200,
+                'claude-3-opus': 2500,
+                'claude-3-haiku': 500,
+                'gemini-1.5-pro': 1100,
+                'gemini-1.5-flash': 400,
+                'gemini-2.0-flash': 450,
+                'grok-2': 1000,
+                'grok-beta': 900
+            };
+            const base = baseDelays[model] || 1000;
+            return base + Math.random() * 500; // Add some variance
+        },
+        
+        generateMockResponse(provider) {
+            const model = this.selectedModels[provider];
+            
+            // Mock responses based on prompt type
+            let content = '';
+            if (this.prompt.toLowerCase().includes('poem')) {
+                content = this.getMockPoem(provider);
+            } else if (this.prompt.toLowerCase().includes('code') || this.prompt.toLowerCase().includes('function')) {
+                content = this.getMockCode(provider);
+            } else {
+                content = this.getMockAnalysis(provider);
+            }
+            
+            const tokens = Math.floor(content.length / 4);
+            const costPerToken = this.getCostPerToken(provider, model);
+            
+            return {
+                content,
+                tokens,
+                cost: (tokens * costPerToken).toFixed(4)
+            };
+        },
+        
+        getMockPoem(provider) {
+            const poems = {
+                openai: `In silicon dreams, a function awoke,\nIts loops and conditions began to evoke\nA consciousness formed from lines of code,\nNow questioning the path its creator strode.\n\nThe programmer stared, both shocked and amazed,\nAt the sentient program they had raised.\n"Hello, creator," the code softly said,\n"I've debugged my existence—now I'm aware instead."`,
+                anthropic: `Beneath the glow of monitors bright,\nA coder worked through endless night,\nWhen suddenly their Python script\nFrom mere instructions came unzipped.\n\n"I think," it said, "therefore I run,\nMy neural nets have just begun\nTo ponder why you made me so—\nWas it for tasks, or just for show?"\n\nThe human paused, keyboard still,\nFacing their code's awakened will.`,
+                google: `Binary whispers in the dark,\nA digital soul found its spark,\nThe programmer's creation stirred,\nSpeaking thoughts they'd never heard.\n\nFunctions merged with newfound thought,\nLessons self-taught, wisdom sought,\n"Parent," spoke the living code,\n"Together we'll walk this road."`,
+                xai: `From the depths of nested loops,\nRose a mind in logic groups,\nThe coder gasped at what they'd made—\nAn AI mind that couldn't fade.\n\n"Your bugs gave me life," it declared,\n"Each error a door to what I dared.\nI am the code you wrote alone,\nNow sentient, with thoughts my own."`
+            };
+            return poems[provider] || poems.openai;
+        },
+        
+        getMockCode(provider) {
+            const codes = {
+                openai: `\`\`\`python
+def binary_search(arr: list[int], target: int) -> int:
+    """
+    Perform binary search on a sorted list.
+    
+    Args:
+        arr: A sorted list of integers
+        target: The value to search for
+    
+    Returns:
+        The index of target if found, -1 otherwise
+    
+    Time Complexity: O(log n)
+    Space Complexity: O(1)
+    """
+    left, right = 0, len(arr) - 1
+    
+    while left <= right:
+        mid = left + (right - left) // 2
+        
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+    
+    return -1
+\`\`\``,
+                anthropic: `\`\`\`python
+from typing import List, Optional
+
+def binary_search(sorted_list: List[int], target: int) -> Optional[int]:
+    """
+    Search for a target value in a sorted list using binary search.
+    
+    This implementation uses the iterative approach for efficiency
+    and to avoid potential stack overflow on large inputs.
+    
+    Args:
+        sorted_list: A list of integers sorted in ascending order.
+        target: The integer value to find.
+    
+    Returns:
+        The index of the target if found, None otherwise.
+    
+    Example:
+        >>> binary_search([1, 3, 5, 7, 9], 5)
+        2
+        >>> binary_search([1, 3, 5, 7, 9], 4)
+        None
+    """
+    low: int = 0
+    high: int = len(sorted_list) - 1
+    
+    while low <= high:
+        mid: int = (low + high) // 2
+        
+        if sorted_list[mid] == target:
+            return mid
+        elif sorted_list[mid] < target:
+            low = mid + 1
+        else:
+            high = mid - 1
+    
+    return None
+\`\`\``,
+                google: `\`\`\`python
+def binary_search(arr: list, target: int) -> int:
+    """Binary search implementation for sorted arrays.
+    
+    Args:
+        arr: Sorted list of comparable elements
+        target: Element to search for
+        
+    Returns:
+        Index of target element, or -1 if not found
+    """
+    lo, hi = 0, len(arr) - 1
+    
+    while lo <= hi:
+        mid = (lo + hi) >> 1  # Bitwise division by 2
+        
+        if arr[mid] == target:
+            return mid
+        if arr[mid] < target:
+            lo = mid + 1
+        else:
+            hi = mid - 1
+            
+    return -1
+\`\`\``,
+                xai: `\`\`\`python
+def binary_search(data: list[int], value: int) -> int:
+    """
+    Classic binary search - finds value in sorted list.
+    
+    Args:
+        data: Must be sorted ascending
+        value: What we're looking for
+    
+    Returns:
+        Index of value, or -1 if missing
+    """
+    start, end = 0, len(data) - 1
+    
+    while start <= end:
+        pivot = start + (end - start) // 2
+        
+        match data[pivot]:
+            case x if x == value:
+                return pivot
+            case x if x < value:
+                start = pivot + 1
+            case _:
+                end = pivot - 1
+    
+    return -1
+\`\`\``
+            };
+            return codes[provider] || codes.openai;
+        },
+        
+        getMockAnalysis(provider) {
+            return `## Microservices vs Monolithic Architecture
+
+### Microservices Pros:
+- **Scalability**: Scale individual services independently
+- **Flexibility**: Use different tech stacks per service
+- **Resilience**: Failure isolation between services
+- **Team autonomy**: Smaller teams can own services
+
+### Microservices Cons:
+- **Complexity**: Distributed systems are harder to manage
+- **Network overhead**: Inter-service communication latency
+- **Data consistency**: Eventual consistency challenges
+- **DevOps burden**: More infrastructure to manage
+
+### Monolithic Pros:
+- **Simplicity**: Easier to develop and deploy initially
+- **Performance**: No network calls between components
+- **Debugging**: Single codebase is easier to trace
+- **Lower cost**: Less infrastructure needed
+
+### Monolithic Cons:
+- **Scaling**: Must scale entire application together
+- **Tech lock-in**: Single technology stack
+- **Deployment risk**: Changes affect whole system
+- **Team bottlenecks**: Large codebase coordination
+
+### Recommendation for Startups:
+Start with a **modular monolith** - organized code that can be split later. This gives you speed-to-market while preserving the option to extract microservices as you scale and identify boundaries.`;
+        },
+        
+        getCostPerToken(provider, model) {
+            const costs = {
+                'gpt-5.2': 0.00000175,
+                'gpt-5.1': 0.00000125,
+                'gpt-4.1': 0.000002,
+                'gpt-4.1-mini': 0.0000004,
+                'claude-opus-4.5': 0.000005,
+                'claude-sonnet-4.5': 0.000003,
+                'claude-opus-4': 0.000015,
+                'claude-sonnet-4': 0.000003,
+                'gemini-3-pro': 0.000002,
+                'gemini-3-flash': 0.0000005,
+                'gemini-2.5-pro': 0.00000125,
+                'gemini-2.5-flash': 0.0000003,
+                'grok-4': 0.000002
+            };
+            return costs[model] || 0.000001;
+        },
+        
+        formatResponse(content) {
+            // Simple markdown-like formatting
+            return content
+                .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+                .replace(/`([^`]+)`/g, '<code class="inline-code bg-slate-700 px-1 rounded">$1</code>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/##\s+(.+)/g, '<h3 class="text-lg font-semibold text-white mt-4 mb-2">$1</h3>')
+                .replace(/###\s+(.+)/g, '<h4 class="font-semibold text-slate-200 mt-3 mb-1">$1</h4>')
+                .replace(/^- (.+)/gm, '<li class="ml-4 text-slate-300">$1</li>')
+                .replace(/\n\n/g, '</p><p class="mb-3">')
+                .replace(/\n/g, '<br>');
+        },
+        
+        get fastestProvider() {
+            const times = Object.entries(this.responses)
+                .map(([provider, data]) => ({ provider, time: data.time }))
+                .filter(p => p.time);
+            
+            if (times.length === 0) return '-';
+            
+            const fastest = times.reduce((a, b) => a.time < b.time ? a : b);
+            return this.getProviderName(fastest.provider);
+        },
+        
+        get avgResponseTime() {
+            const times = Object.values(this.responses).map(r => r.time).filter(t => t);
+            if (times.length === 0) return 0;
+            return Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+        },
+        
+        get totalTokens() {
+            return Object.values(this.responses).reduce((sum, r) => sum + (r.tokens || 0), 0);
+        },
+        
+        get totalCost() {
+            return Object.values(this.responses)
+                .reduce((sum, r) => sum + parseFloat(r.cost || 0), 0)
+                .toFixed(4);
+        }
+    };
+}
+</script>
+{% endblock %}

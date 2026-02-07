@@ -1,0 +1,51 @@
+# AI Engineering Tutorial - Development Docker Compose
+# Optimized for local development with hot reloading
+
+services:
+  # Development server with hot reload
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: ai-tutorial-dev
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_ENV=development
+      - DEBUG=true
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - XAI_API_KEY=${XAI_API_KEY:-}
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      # Mount source code for hot reloading
+      - ./src:/app/src:rw
+      - ./content:/app/content:rw
+      - ./static:/app/static:rw
+      - ./templates:/app/templates:rw
+      - ./tests:/app/tests:rw
+    depends_on:
+      - ollama
+    networks:
+      - ai-tutorial-dev-network
+
+  # Ollama for local model hosting
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ai-tutorial-ollama-dev
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-dev-data:/root/.ollama
+    environment:
+      - OLLAMA_ORIGINS=*
+    networks:
+      - ai-tutorial-dev-network
+
+networks:
+  ai-tutorial-dev-network:
+    driver: bridge
+
+volumes:
+  ollama-dev-data:

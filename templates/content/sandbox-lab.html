@@ -1,0 +1,664 @@
+{% extends "base.html" %}
+
+{% block head %}
+<!-- Pyodide for in-browser Python execution -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+
+<style>
+    /* Lab layout */
+    .lab-container {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        height: 100%;
+    }
+    
+    .lab-main {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
+        overflow: hidden;
+    }
+    
+    @media (max-width: 1024px) {
+        .lab-main {
+            grid-template-columns: 1fr;
+            grid-template-rows: 1fr 1fr;
+        }
+    }
+    
+    /* Prose styling for instructions */
+    .prose {
+        color: #e2e8f0;
+        line-height: 1.75;
+    }
+    .prose h1, .prose h2, .prose h3 { 
+        color: #fff; 
+        font-weight: 600; 
+        margin-top: 1.5rem; 
+        margin-bottom: 0.5rem; 
+    }
+    .prose h1 { font-size: 1.5rem; }
+    .prose h2 { font-size: 1.25rem; }
+    .prose h3 { font-size: 1.1rem; }
+    .prose p { margin-bottom: 1rem; }
+    .prose ul, .prose ol { 
+        padding-left: 1.5rem; 
+        margin-bottom: 1rem; 
+    }
+    .prose ul { list-style-type: disc; }
+    .prose ol { list-style-type: decimal; }
+    .prose li { margin-bottom: 0.25rem; }
+    .prose code:not(.hljs) { 
+        background: #1e293b; 
+        padding: 0.125rem 0.375rem; 
+        border-radius: 0.25rem; 
+        font-size: 0.875rem; 
+        color: #f472b6; 
+    }
+    .prose pre { 
+        margin: 1rem 0; 
+        border-radius: 0.5rem;
+        overflow-x: auto;
+    }
+    .prose a {
+        color: #38bdf8;
+        text-decoration: underline;
+    }
+    .prose a:hover {
+        color: #7dd3fc;
+    }
+    .prose blockquote {
+        border-left: 4px solid #38bdf8;
+        padding-left: 1rem;
+        margin: 1rem 0;
+        color: #94a3b8;
+    }
+    .prose table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+    }
+    .prose th, .prose td {
+        border: 1px solid #334155;
+        padding: 0.5rem;
+        text-align: left;
+    }
+    .prose th {
+        background: #1e293b;
+    }
+    
+    /* Code editor container */
+    .editor-container {
+        display: flex;
+        flex-direction: column;
+        background: #0f172a;
+        overflow: hidden;
+    }
+    
+    .editor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background: #1e293b;
+        border-bottom: 1px solid #334155;
+    }
+    
+    .editor-wrapper {
+        flex: 1;
+        overflow: hidden;
+        min-height: 300px;
+    }
+    
+    /* Output panel */
+    .output-panel {
+        border-top: 1px solid #334155;
+        background: #0f172a;
+        display: flex;
+        flex-direction: column;
+        max-height: 40%;
+        min-height: 150px;
+    }
+    
+    .output-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background: #1e293b;
+        border-bottom: 1px solid #334155;
+    }
+    
+    .output-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+        font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', monospace;
+        font-size: 0.875rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    
+    .output-stdout { color: #4ade80; }
+    .output-stderr { color: #f87171; }
+    .output-info { color: #94a3b8; }
+    
+    /* Loading overlay */
+    .loading-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.9);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+    }
+    
+    .loading-spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid #334155;
+        border-top-color: #38bdf8;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .progress-bar-container {
+        width: 200px;
+        height: 4px;
+        background: #334155;
+        border-radius: 2px;
+        margin-top: 1rem;
+        overflow: hidden;
+    }
+    
+    .progress-bar-fill {
+        height: 100%;
+        background: #38bdf8;
+        transition: width 0.3s ease;
+    }
+    
+    /* Execution mode tabs */
+    .mode-tabs {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .mode-tab {
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .mode-tab.active {
+        background: #0ea5e9;
+        color: white;
+    }
+    
+    .mode-tab:not(.active) {
+        background: #334155;
+        color: #94a3b8;
+    }
+    
+    .mode-tab:not(.active):hover {
+        background: #475569;
+        color: white;
+    }
+
+    /* Resizer */
+    .resizer {
+        width: 4px;
+        background: #334155;
+        cursor: col-resize;
+        transition: background 0.2s;
+    }
+    
+    .resizer:hover {
+        background: #38bdf8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="lab-container" 
+     x-data="sandboxLab()" 
+     x-init="init()"
+     @resize.window.debounce.100ms="resizeEditor()">
+    
+    <!-- Lab Header -->
+    <div class="bg-slate-800 border-b border-slate-700 px-6 py-3">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <span class="text-2xl">🧪</span>
+                <div>
+                    <h1 class="text-lg font-bold text-white">{{ page.title if page else 'Interactive Lab' }}</h1>
+                    <p class="text-xs text-slate-400">{{ page.description if page else 'Practice coding in your browser' }}</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <!-- Execution Mode Toggle -->
+                <div class="mode-tabs">
+                    <button 
+                        @click="setMode('browser')"
+                        :class="{ 'active': executionMode === 'browser' }"
+                        class="mode-tab"
+                        title="Run Python in your browser (no API key needed)">
+                        🌐 Browser
+                    </button>
+                    <button 
+                        @click="setMode('server')"
+                        :class="{ 'active': executionMode === 'server' }"
+                        class="mode-tab"
+                        title="Run on server with real API calls">
+                        🖥️ Server
+                    </button>
+                </div>
+                
+                <!-- Provider Selector (server mode only) -->
+                <select 
+                    x-show="executionMode === 'server'"
+                    x-model="selectedProvider"
+                    x-transition
+                    class="bg-slate-700 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-primary-500">
+                    <option value="openai">OpenAI</option>
+                    <option value="anthropic">Anthropic</option>
+                    <option value="google">Google</option>
+                    <option value="xai">xAI</option>
+                </select>
+                
+                <!-- Preset Selector (browser mode) -->
+                <select 
+                    x-show="executionMode === 'browser'"
+                    x-model="sandboxPreset"
+                    @change="loadPreset()"
+                    x-transition
+                    class="bg-slate-700 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-primary-500">
+                    <option value="basic">Basic Python</option>
+                    <option value="dataScience">Data Science</option>
+                    <option value="llmBasics">LLM Concepts</option>
+                    <option value="rag">RAG</option>
+                    <option value="tokenization">Tokenization</option>
+                    <option value="promptEngineering">Prompt Engineering</option>
+                    <option value="agents">Agents</option>
+                </select>
+                
+                <!-- Run Button -->
+                <button 
+                    @click="runCode()"
+                    :disabled="isRunning || (executionMode === 'browser' && !sandboxReady)"
+                    class="px-4 py-1.5 bg-green-600 hover:bg-green-500 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors flex items-center space-x-2 text-sm">
+                    <span x-show="!isRunning">▶ Run</span>
+                    <span x-show="isRunning" class="flex items-center space-x-2">
+                        <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Running...</span>
+                    </span>
+                </button>
+                
+                <!-- Reset Button -->
+                <button 
+                    @click="resetCode()"
+                    class="px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg font-medium transition-colors text-sm">
+                    ↺ Reset
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Lab Area -->
+    <div class="lab-main">
+        <!-- Left Panel: Instructions -->
+        <div class="border-r border-slate-700 overflow-y-auto p-6 bg-slate-800/50">
+            <div class="prose max-w-none">
+                {% if rendered_content %}
+                {{ rendered_content | safe }}
+                {% else %}
+                <h2>Welcome to the Interactive Lab</h2>
+                <p>This lab runs Python directly in your browser using Pyodide (Python compiled to WebAssembly).</p>
+                
+                <h3>Getting Started</h3>
+                <ol>
+                    <li>Wait for the Python environment to load</li>
+                    <li>Write or modify the code in the editor</li>
+                    <li>Click <strong>Run</strong> or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd></li>
+                    <li>See the output below the editor</li>
+                </ol>
+                
+                <div class="mt-4 p-4 bg-primary-500/10 border border-primary-500/30 rounded-lg">
+                    <div class="flex items-center space-x-2 text-primary-400 mb-2">
+                        <span>💡</span>
+                        <span class="font-semibold">Tip</span>
+                    </div>
+                    <p class="text-sm text-slate-300 mb-0">
+                        Use <strong>Browser mode</strong> for instant execution without API keys. 
+                        Switch to <strong>Server mode</strong> for real LLM API calls (requires API key in Settings).
+                    </p>
+                </div>
+                
+                <h3 class="mt-6">Available Helpers</h3>
+                <ul>
+                    <li><code>print_section(title)</code> - Print a formatted header</li>
+                    <li><code>print_success(msg)</code> - Print with ✅</li>
+                    <li><code>print_error(msg)</code> - Print with ❌</li>
+                    <li><code>print_info(msg)</code> - Print with ℹ️</li>
+                </ul>
+                {% endif %}
+            </div>
+            
+            <!-- Hints Section -->
+            {% if page and page.hints %}
+            <div class="mt-8" x-data="{ showHints: false, currentHint: 0 }">
+                <button @click="showHints = !showHints" class="text-primary-400 hover:text-primary-300 text-sm flex items-center space-x-2">
+                    <span>💡 Need a hint?</span>
+                    <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': showHints }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div x-show="showHints" x-collapse class="mt-4 space-y-2">
+                    {% for hint in page.hints %}
+                    <div class="p-3 bg-slate-700/50 rounded-lg text-sm text-slate-300" x-show="currentHint >= {{ loop.index0 }}">
+                        <span class="text-primary-400">Hint {{ loop.index }}:</span> {{ hint }}
+                    </div>
+                    {% endfor %}
+                    <button @click="currentHint = Math.min(currentHint + 1, {{ page.hints|length - 1 }})" 
+                            x-show="currentHint < {{ page.hints|length - 1 }}"
+                            class="text-sm text-slate-400 hover:text-white">
+                        Show next hint →
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Right Panel: Editor & Output -->
+        <div class="editor-container relative">
+            <!-- Loading Overlay -->
+            <div x-show="executionMode === 'browser' && !sandboxReady" 
+                 x-transition
+                 class="loading-overlay">
+                <div class="loading-spinner"></div>
+                <p class="mt-4 text-slate-400" x-text="loadingMessage">Loading Python...</p>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" :style="{ width: loadingProgress + '%' }"></div>
+                </div>
+            </div>
+            
+            <!-- Editor Header -->
+            <div class="editor-header">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs text-slate-500">Python</span>
+                    <span x-show="executionMode === 'browser'" class="text-xs text-green-500">● Pyodide</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs text-slate-500">
+                        <kbd class="px-1 py-0.5 bg-slate-700 rounded">Ctrl</kbd>+<kbd class="px-1 py-0.5 bg-slate-700 rounded">Enter</kbd> to run
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Code Editor -->
+            <div class="editor-wrapper" id="code-editor"></div>
+            
+            <!-- Output Panel -->
+            <div class="output-panel">
+                <div class="output-header">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-slate-400">Output</span>
+                        <span x-show="executionTime > 0" class="text-xs text-slate-500" x-text="'(' + executionTime + 'ms)'"></span>
+                    </div>
+                    <button @click="clearOutput()" class="text-xs text-slate-500 hover:text-white">Clear</button>
+                </div>
+                <div class="output-content" id="output-container">
+                    <template x-if="outputLines.length === 0 && !isRunning">
+                        <span class="output-info">Output will appear here when you run the code...</span>
+                    </template>
+                    <template x-for="(line, index) in outputLines" :key="index">
+                        <div :class="'output-' + line.type" x-text="line.text"></div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Success Modal -->
+    <div x-show="showSuccess" 
+         x-transition
+         class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-slate-800 rounded-xl p-8 text-center max-w-md" @click.away="showSuccess = false">
+            <span class="text-6xl mb-4 block">🎉</span>
+            <h2 class="text-2xl font-bold text-white mb-2">Lab Complete!</h2>
+            <p class="text-slate-400 mb-6">Great job completing this lab exercise.</p>
+            <div class="flex items-center justify-center space-x-4">
+                <button @click="showSuccess = false" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white">
+                    Continue Practicing
+                </button>
+                {% if next_page %}
+                <a href="/learn/{{ module.id }}/{{ section.id }}/{{ next_page.id }}" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 rounded-lg text-white">
+                    Next: {{ next_page.title }} →
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Load sandbox and editor modules -->
+<script src="/static/js/pyodide-sandbox.js"></script>
+<script src="/static/js/code-editor.js"></script>
+
+<script>
+function sandboxLab() {
+    return {
+        // State
+        code: {{ (page.starter_code if page and page.starter_code else '# Write your Python code here\n\nprint("Hello, AI Tutorial!")\n') | tojson }},
+        originalCode: {{ (page.starter_code if page and page.starter_code else '# Write your Python code here\n\nprint("Hello, AI Tutorial!")\n') | tojson }},
+        
+        executionMode: 'browser',
+        selectedProvider: localStorage.getItem('selectedProvider') || 'openai',
+        sandboxPreset: '{{ page.sandbox_preset if page and page.sandbox_preset else "basic" }}',
+        
+        outputLines: [],
+        isRunning: false,
+        showSuccess: false,
+        executionTime: 0,
+        
+        // Sandbox state
+        sandbox: null,
+        sandboxReady: false,
+        loadingProgress: 0,
+        loadingMessage: 'Loading Python runtime...',
+        
+        // Editor
+        editor: null,
+        
+        async init() {
+            // Initialize code editor
+            this.editor = await createCodeEditor('#code-editor', {
+                value: this.code,
+                language: 'python',
+                onChange: (value) => { this.code = value; },
+                onRun: () => { this.runCode(); }
+            });
+            
+            // Initialize sandbox for browser mode
+            if (this.executionMode === 'browser') {
+                await this.initSandbox();
+            }
+        },
+        
+        async initSandbox() {
+            this.sandboxReady = false;
+            this.loadingProgress = 0;
+            this.loadingMessage = 'Loading Python runtime...';
+            
+            try {
+                this.sandbox = new PyodideSandbox({
+                    onProgress: (info) => {
+                        this.loadingProgress = info.progress;
+                        this.loadingMessage = info.message;
+                    },
+                    onOutput: (output) => {
+                        this.outputLines.push({
+                            type: output.type,
+                            text: output.text
+                        });
+                    },
+                    onReady: () => {
+                        this.sandboxReady = true;
+                    }
+                });
+                
+                await this.sandbox.initialize();
+                await this.loadPreset();
+                
+            } catch (error) {
+                console.error('Failed to initialize sandbox:', error);
+                this.outputLines.push({
+                    type: 'stderr',
+                    text: 'Failed to load Python environment: ' + error.message
+                });
+            }
+        },
+        
+        async loadPreset() {
+            if (!this.sandbox || !this.sandboxReady) return;
+            
+            const preset = SandboxPresets[this.sandboxPreset];
+            if (!preset) return;
+            
+            this.outputLines = [];
+            
+            try {
+                // Load packages
+                if (preset.packages && preset.packages.length > 0) {
+                    this.outputLines.push({
+                        type: 'info',
+                        text: `Loading packages: ${preset.packages.join(', ')}...`
+                    });
+                    await this.sandbox.loadPackages(preset.packages);
+                }
+                
+                // Run setup code
+                if (preset.setupCode) {
+                    await this.sandbox.execute(preset.setupCode);
+                }
+            } catch (error) {
+                console.warn('Preset loading warning:', error);
+            }
+        },
+        
+        setMode(mode) {
+            this.executionMode = mode;
+            this.outputLines = [];
+            
+            if (mode === 'browser' && !this.sandbox) {
+                this.initSandbox();
+            }
+        },
+        
+        async runCode() {
+            if (this.isRunning) return;
+            
+            this.isRunning = true;
+            this.outputLines = [];
+            
+            const startTime = performance.now();
+            
+            try {
+                if (this.executionMode === 'browser') {
+                    await this.runInBrowser();
+                } else {
+                    await this.runOnServer();
+                }
+            } catch (error) {
+                this.outputLines.push({
+                    type: 'stderr',
+                    text: 'Error: ' + error.message
+                });
+            } finally {
+                this.isRunning = false;
+                this.executionTime = Math.round(performance.now() - startTime);
+            }
+        },
+        
+        async runInBrowser() {
+            if (!this.sandbox || !this.sandboxReady) {
+                throw new Error('Python sandbox not ready');
+            }
+            
+            const result = await this.sandbox.execute(this.code);
+            
+            if (!result.success) {
+                this.outputLines.push({
+                    type: 'stderr',
+                    text: result.error || result.errors
+                });
+            }
+        },
+        
+        async runOnServer() {
+            const response = await fetch('/api/lab/execute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: this.code,
+                    provider: this.selectedProvider,
+                    lab_id: '{{ page.id if page else "" }}'
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.outputLines.push({
+                    type: 'stdout',
+                    text: data.output
+                });
+                
+                if (data.completed) {
+                    this.showSuccess = true;
+                    localStorage.setItem('completed_{{ page.id if page else "" }}', 'true');
+                }
+            } else {
+                this.outputLines.push({
+                    type: 'stderr',
+                    text: data.error || 'Execution failed'
+                });
+            }
+        },
+        
+        resetCode() {
+            this.code = this.originalCode;
+            if (this.editor) {
+                this.editor.setValue(this.originalCode);
+            }
+            this.outputLines = [];
+            this.executionTime = 0;
+        },
+        
+        clearOutput() {
+            this.outputLines = [];
+            this.executionTime = 0;
+        },
+        
+        resizeEditor() {
+            if (this.editor && this.editor.layout) {
+                this.editor.layout();
+            }
+        }
+    };
+}
+</script>
+{% endblock %}

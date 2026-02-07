@@ -1,0 +1,493 @@
+{% extends "base.html" %}
+
+{% block title %}Case Studies - AI Engineering Tutorial{% endblock %}
+
+{% block head %}
+<style>
+    .case-study-card {
+        transition: all 0.3s ease;
+    }
+    .case-study-card:hover {
+        transform: translateY(-4px);
+    }
+    .metric-card {
+        background: linear-gradient(135deg, rgba(14, 165, 233, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+    }
+    .architecture-diagram {
+        background: repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 10px,
+            rgba(51, 65, 85, 0.3) 10px,
+            rgba(51, 65, 85, 0.3) 20px
+        );
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-6 py-12" x-data="{ activeStudy: null }">
+    <!-- Header -->
+    <div class="mb-12">
+        <h1 class="text-3xl font-bold mb-3">📊 Real-World Case Studies</h1>
+        <p class="text-slate-400 text-lg">Learn from production AI implementations with detailed architecture breakdowns, cost analysis, and lessons learned.</p>
+    </div>
+    
+    <!-- Case Studies Grid -->
+    <div class="grid lg:grid-cols-2 gap-8 mb-12">
+        
+        <!-- Case Study 1: Customer Support Bot -->
+        <div class="case-study-card bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 p-6 border-b border-slate-700">
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="text-4xl">🤖</span>
+                    <div>
+                        <h2 class="text-xl font-bold">Customer Support Chatbot</h2>
+                        <p class="text-slate-400 text-sm">E-commerce company • RAG + Agents</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs">RAG</span>
+                    <span class="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">GPT-5.1</span>
+                    <span class="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-xs">ChromaDB</span>
+                    <span class="px-2 py-1 bg-orange-500/20 text-orange-400 rounded text-xs">Function Calling</span>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <h3 class="font-semibold mb-3">📋 Challenge</h3>
+                <p class="text-slate-400 text-sm mb-4">Handle 10,000+ daily support tickets with 24/7 availability while maintaining accuracy for order status, returns, and product questions.</p>
+                
+                <h3 class="font-semibold mb-3">🏗️ Solution Architecture</h3>
+                <div class="bg-slate-900 rounded-lg p-4 mb-4 font-mono text-xs">
+                    <div class="text-slate-400">
+                        User Query → Intent Classification<br>
+                        &nbsp;&nbsp;├── Order Status → API Tool (real-time)<br>
+                        &nbsp;&nbsp;├── Product Info → RAG (knowledge base)<br>
+                        &nbsp;&nbsp;├── Returns → RAG + Workflow Agent<br>
+                        &nbsp;&nbsp;└── Complex → Human Escalation
+                    </div>
+                </div>
+                
+                <h3 class="font-semibold mb-3">📈 Key Metrics</h3>
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <div class="metric-card rounded-lg p-3 text-center">
+                        <div class="text-2xl font-bold text-primary-400">73%</div>
+                        <div class="text-xs text-slate-400">Auto-resolved</div>
+                    </div>
+                    <div class="metric-card rounded-lg p-3 text-center">
+                        <div class="text-2xl font-bold text-green-400">4.2s</div>
+                        <div class="text-xs text-slate-400">Avg Response</div>
+                    </div>
+                    <div class="metric-card rounded-lg p-3 text-center">
+                        <div class="text-2xl font-bold text-yellow-400">$0.02</div>
+                        <div class="text-xs text-slate-400">Per Ticket</div>
+                    </div>
+                </div>
+                
+                <button 
+                    @click="activeStudy = activeStudy === 'support' ? null : 'support'"
+                    class="block w-full py-2 bg-primary-500/20 text-primary-400 rounded-lg text-center hover:bg-primary-500/30 transition-colors"
+                >
+                    <span x-show="activeStudy !== 'support'">View Full Details ↓</span>
+                    <span x-show="activeStudy === 'support'">Hide Details ↑</span>
+                </button>
+                
+                <!-- Expanded Details -->
+                <div x-show="activeStudy === 'support'" x-collapse class="mt-4 pt-4 border-t border-slate-700">
+                    <h4 class="font-semibold mb-2">🔧 Technical Stack</h4>
+                    <ul class="text-sm text-slate-400 space-y-1 mb-4">
+                        <li>• <strong>LLM:</strong> GPT-5.1 with function calling</li>
+                        <li>• <strong>Vector DB:</strong> ChromaDB with 500K+ product documents</li>
+                        <li>• <strong>Embedding:</strong> text-embedding-3-large</li>
+                        <li>• <strong>Framework:</strong> LangChain + FastAPI</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold mb-2">💡 Key Lessons</h4>
+                    <ul class="text-sm text-slate-400 space-y-1 mb-4">
+                        <li>• Intent classification reduced hallucinations by 60%</li>
+                        <li>• Real-time API tools were essential for order queries</li>
+                        <li>• Human escalation threshold at confidence &lt; 0.7 worked well</li>
+                        <li>• Caching frequent queries reduced costs by 40%</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold mb-2">📊 Cost Breakdown</h4>
+                    <div class="bg-slate-900 rounded-lg p-3 text-sm">
+                        <div class="flex justify-between text-slate-400"><span>LLM Tokens:</span><span>$0.012/ticket</span></div>
+                        <div class="flex justify-between text-slate-400"><span>Embeddings:</span><span>$0.003/ticket</span></div>
+                        <div class="flex justify-between text-slate-400"><span>Infrastructure:</span><span>$0.005/ticket</span></div>
+                        <div class="flex justify-between font-semibold mt-2 pt-2 border-t border-slate-700"><span>Total:</span><span class="text-primary-400">$0.02/ticket</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Case Study 2: Code Review Agent -->
+        <div class="case-study-card bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+            <div class="bg-gradient-to-r from-purple-500/20 to-pink-500/20 p-6 border-b border-slate-700">
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="text-4xl">👨‍💻</span>
+                    <div>
+                        <h2 class="text-xl font-bold">Automated Code Review Agent</h2>
+                        <p class="text-slate-400 text-sm">FinTech startup • Multi-Agent System</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-xs">Multi-Agent</span>
+                    <span class="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs">Claude Sonnet 4.5</span>
+                    <span class="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">GitHub API</span>
+                    <span class="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded text-xs">AST Analysis</span>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <h3 class="font-semibold mb-3">📋 Challenge</h3>
+                <p class="text-slate-400 text-sm mb-4">Review 50+ PRs daily across 3 repositories with consistent quality standards, security checks, and compliance verification.</p>
+                
+                <h3 class="font-semibold mb-3">🏗️ Solution Architecture</h3>
+                <div class="bg-slate-900 rounded-lg p-4 mb-4 font-mono text-xs">
+                    <div class="text-slate-400">
+                        PR Webhook → Orchestrator Agent<br>
+                        &nbsp;&nbsp;├── Security Agent (OWASP checks)<br>
+                        &nbsp;&nbsp;├── Style Agent (linting + patterns)<br>
+                        &nbsp;&nbsp;├── Logic Agent (bug detection)<br>
+                        &nbsp;&nbsp;└── Summarizer → GitHub Comment
+                    </div>
+                </div>
+                
+                <h3 class="font-semibold mb-3">📈 Key Metrics</h3>
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <div class="metric-card rounded-lg p-3 text-center">
+                        <div class="text-2xl font-bold text-primary-400">89%</div>
+                        <div class="text-xs text-slate-400">Issues Caught</div>
+                    </div>
+                    <div class="metric-card rounded-lg p-3 text-center">
+                        <div class="text-2xl font-bold text-green-400">-65%</div>
+                        <div class="text-xs text-slate-400">Review Time</div>
+                    </div>
+                    <div class="metric-card rounded-lg p-3 text-center">
+                        <div class="text-2xl font-bold text-yellow-400">$1.50</div>
+                        <div class="text-xs text-slate-400">Per PR</div>
+                    </div>
+                </div>
+                
+                <button 
+                    @click="activeStudy = activeStudy === 'codereview' ? null : 'codereview'"
+                    class="block w-full py-2 bg-primary-500/20 text-primary-400 rounded-lg text-center hover:bg-primary-500/30 transition-colors"
+                >
+                    <span x-show="activeStudy !== 'codereview'">View Full Details ↓</span>
+                    <span x-show="activeStudy === 'codereview'">Hide Details ↑</span>
+                </button>
+                
+                <!-- Expanded Details -->
+                <div x-show="activeStudy === 'codereview'" x-collapse class="mt-4 pt-4 border-t border-slate-700">
+                    <h4 class="font-semibold mb-2">🔧 Technical Stack</h4>
+                    <ul class="text-sm text-slate-400 space-y-1 mb-4">
+                        <li>• <strong>LLM:</strong> Claude Sonnet 4.5 for code understanding</li>
+                        <li>• <strong>Integration:</strong> GitHub Webhooks + Actions</li>
+                        <li>• <strong>Analysis:</strong> tree-sitter for AST parsing</li>
+                        <li>• <strong>Framework:</strong> Custom multi-agent orchestrator</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold mb-2">💡 Key Lessons</h4>
+                    <ul class="text-sm text-slate-400 space-y-1 mb-4">
+                        <li>• Specialized agents outperformed single general agent by 40%</li>
+                        <li>• AST context improved bug detection accuracy significantly</li>
+                        <li>• Batching small files reduced API costs by 50%</li>
+                        <li>• Human override for security-critical changes was essential</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold mb-2">📊 Cost Breakdown</h4>
+                    <div class="bg-slate-900 rounded-lg p-3 text-sm">
+                        <div class="flex justify-between text-slate-400"><span>Security Agent:</span><span>$0.45/PR</span></div>
+                        <div class="flex justify-between text-slate-400"><span>Style Agent:</span><span>$0.30/PR</span></div>
+                        <div class="flex justify-between text-slate-400"><span>Logic Agent:</span><span>$0.60/PR</span></div>
+                        <div class="flex justify-between text-slate-400"><span>Orchestration:</span><span>$0.15/PR</span></div>
+                        <div class="flex justify-between font-semibold mt-2 pt-2 border-t border-slate-700"><span>Total:</span><span class="text-primary-400">$1.50/PR</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Case Study 3: Knowledge Base RAG -->
+        <div class="case-study-card bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+            <div class="bg-gradient-to-r from-green-500/20 to-emerald-500/20 p-6 border-b border-slate-700">
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="text-4xl">📚</span>
+                    <div>
+                        <h2 class="text-xl font-bold">Enterprise Knowledge Base</h2>
+                        <p class="text-slate-400 text-sm">Healthcare company • Advanced RAG</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">Hybrid Search</span>
+                    <span class="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs">Pinecone</span>
+                    <span class="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-xs">Reranking</span>
+                    <span class="px-2 py-1 bg-orange-500/20 text-orange-400 rounded text-xs">Citations</span>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <h3 class="font-semibold mb-3">📋 Challenge</h3>
+                <p class="text-slate-400 text-sm mb-4">Search 500,000+ medical documents with high accuracy, strict citation requirements, and HIPAA compliance.</p>
+                
+                <h3 class="font-semibold mb-3">🏗️ Solution Architecture</h3>
+                <div class="bg-slate-900 rounded-lg p-4 mb-4 font-mono text-xs">
+                    <div class="text-slate-400">
+                        Query → Query Expansion (HyDE)<br>
+                        &nbsp;&nbsp;├── Dense Search (embeddings)<br>
+                        &nbsp;&nbsp;├── Sparse Search (BM25)<br>
+                        &nbsp;&nbsp;└── Reciprocal Rank Fusion<br>
+                        → Cohere Reranker → GPT-5.1 + Citations
+                    </div>
+                </div>
+                
+                <h3 class="font-semibold mb-3">📈 Key Metrics</h3>
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <div class="metric-card rounded-lg p-3 text-center">
+                        <div class="text-2xl font-bold text-primary-400">94%</div>
+                        <div class="text-xs text-slate-400">Retrieval Acc.</div>
+                    </div>
+                    <div class="metric-card rounded-lg p-3 text-center">
+                        <div class="text-2xl font-bold text-green-400">100%</div>
+                        <div class="text-xs text-slate-400">Citation Rate</div>
+                    </div>
+                    <div class="metric-card rounded-lg p-3 text-center">
+                        <div class="text-2xl font-bold text-yellow-400">1.8s</div>
+                        <div class="text-xs text-slate-400">P95 Latency</div>
+                    </div>
+                </div>
+                
+                <button 
+                    @click="activeStudy = activeStudy === 'knowledge' ? null : 'knowledge'"
+                    class="block w-full py-2 bg-primary-500/20 text-primary-400 rounded-lg text-center hover:bg-primary-500/30 transition-colors"
+                >
+                    <span x-show="activeStudy !== 'knowledge'">View Full Details ↓</span>
+                    <span x-show="activeStudy === 'knowledge'">Hide Details ↑</span>
+                </button>
+                
+                <!-- Expanded Details -->
+                <div x-show="activeStudy === 'knowledge'" x-collapse class="mt-4 pt-4 border-t border-slate-700">
+                    <h4 class="font-semibold mb-2">🔧 Technical Stack</h4>
+                    <ul class="text-sm text-slate-400 space-y-1 mb-4">
+                        <li>• <strong>LLM:</strong> GPT-5.1 with strict citation prompts</li>
+                        <li>• <strong>Vector DB:</strong> Pinecone with 2M+ medical documents</li>
+                        <li>• <strong>Search:</strong> Hybrid (BM25 + dense) with Cohere reranking</li>
+                        <li>• <strong>Compliance:</strong> HIPAA-compliant infrastructure</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold mb-2">💡 Key Lessons</h4>
+                    <ul class="text-sm text-slate-400 space-y-1 mb-4">
+                        <li>• Hybrid search improved recall by 25% over dense-only</li>
+                        <li>• Reranking was critical for medical accuracy</li>
+                        <li>• Strict citation enforcement eliminated hallucinations</li>
+                        <li>• Semantic chunking preserved medical context better</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold mb-2">📊 Cost Breakdown</h4>
+                    <div class="bg-slate-900 rounded-lg p-3 text-sm">
+                        <div class="flex justify-between text-slate-400"><span>Pinecone (2M vectors):</span><span>$70/month</span></div>
+                        <div class="flex justify-between text-slate-400"><span>Reranking (Cohere):</span><span>$0.001/query</span></div>
+                        <div class="flex justify-between text-slate-400"><span>GPT-5.1 (avg 2K tokens):</span><span>$0.04/query</span></div>
+                        <div class="flex justify-between font-semibold mt-2 pt-2 border-t border-slate-700"><span>Monthly (10K queries):</span><span class="text-primary-400">~$680</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Case Study 4: Document Processing -->
+        <div class="case-study-card bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+            <div class="bg-gradient-to-r from-orange-500/20 to-amber-500/20 p-6 border-b border-slate-700">
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="text-4xl">📄</span>
+                    <div>
+                        <h2 class="text-xl font-bold">Intelligent Document Processing</h2>
+                        <p class="text-slate-400 text-sm">Insurance company • Multimodal + Extraction</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-2 py-1 bg-orange-500/20 text-orange-400 rounded text-xs">Gemini 3 Pro Vision</span>
+                    <span class="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs">OCR</span>
+                    <span class="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">Structured Output</span>
+                    <span class="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-xs">Validation</span>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <h3 class="font-semibold mb-3">📋 Challenge</h3>
+                <p class="text-slate-400 text-sm mb-4">Process 5,000+ claim documents daily including handwritten forms, photos of damage, and medical records.</p>
+                
+                <h3 class="font-semibold mb-3">🏗️ Solution Architecture</h3>
+                <div class="bg-slate-900 rounded-lg p-4 mb-4 font-mono text-xs">
+                    <div class="text-slate-400">
+                        Document Upload → Classification<br>
+                        &nbsp;&nbsp;├── Forms → OCR + Gemini Extract<br>
+                        &nbsp;&nbsp;├── Photos → Vision Analysis<br>
+                        &nbsp;&nbsp;├── PDFs → Text + Table Extract<br>
+                        &nbsp;&nbsp;└── Validator → Structured JSON
+                    </div>
+                </div>
+                
+                <h3 class="font-semibold mb-3">📈 Key Metrics</h3>
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <div class="metric-card rounded-lg p-3 text-center">
+                        <div class="text-2xl font-bold text-primary-400">96%</div>
+                        <div class="text-xs text-slate-400">Extraction Acc.</div>
+                    </div>
+                    <div class="metric-card rounded-lg p-3 text-center">
+                        <div class="text-2xl font-bold text-green-400">-80%</div>
+                        <div class="text-xs text-slate-400">Manual Work</div>
+                    </div>
+                    <div class="metric-card rounded-lg p-3 text-center">
+                        <div class="text-2xl font-bold text-yellow-400">$0.15</div>
+                        <div class="text-xs text-slate-400">Per Document</div>
+                    </div>
+                </div>
+                
+                <button 
+                    @click="activeStudy = activeStudy === 'docproc' ? null : 'docproc'"
+                    class="block w-full py-2 bg-primary-500/20 text-primary-400 rounded-lg text-center hover:bg-primary-500/30 transition-colors"
+                >
+                    <span x-show="activeStudy !== 'docproc'">View Full Details ↓</span>
+                    <span x-show="activeStudy === 'docproc'">Hide Details ↑</span>
+                </button>
+                
+                <!-- Expanded Details -->
+                <div x-show="activeStudy === 'docproc'" x-collapse class="mt-4 pt-4 border-t border-slate-700">
+                    <h4 class="font-semibold mb-2">🔧 Technical Stack</h4>
+                    <ul class="text-sm text-slate-400 space-y-1 mb-4">
+                        <li>• <strong>Vision:</strong> Gemini 3 Pro for images and handwriting</li>
+                        <li>• <strong>OCR:</strong> Azure Document Intelligence as fallback</li>
+                        <li>• <strong>Extraction:</strong> Structured outputs with JSON schema</li>
+                        <li>• <strong>Validation:</strong> Rule-based + LLM consistency checks</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold mb-2">💡 Key Lessons</h4>
+                    <ul class="text-sm text-slate-400 space-y-1 mb-4">
+                        <li>• Gemini 3 Vision outperformed traditional OCR on handwriting by 40%</li>
+                        <li>• Structured output mode eliminated parsing errors</li>
+                        <li>• Two-stage validation (rules + LLM) caught edge cases</li>
+                        <li>• Async processing essential for 5K+ daily documents</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold mb-2">📊 Cost Breakdown</h4>
+                    <div class="bg-slate-900 rounded-lg p-3 text-sm">
+                        <div class="flex justify-between text-slate-400"><span>Gemini Vision (avg):</span><span>$0.06/doc</span></div>
+                        <div class="flex justify-between text-slate-400"><span>Azure OCR fallback:</span><span>$0.02/doc</span></div>
+                        <div class="flex justify-between text-slate-400"><span>Validation pass:</span><span>$0.03/doc</span></div>
+                        <div class="flex justify-between text-slate-400"><span>Infrastructure:</span><span>$0.02/doc</span></div>
+                        <div class="flex justify-between font-semibold mt-2 pt-2 border-t border-slate-700"><span>Total:</span><span class="text-primary-400">$0.15/doc</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cost Comparison Section -->
+    <div class="bg-slate-800 rounded-xl border border-slate-700 p-8 mb-12">
+        <h2 class="text-2xl font-bold mb-6">💰 Cost Analysis Summary</h2>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-slate-700">
+                        <th class="text-left py-3 px-4">Use Case</th>
+                        <th class="text-right py-3 px-4">Monthly Volume</th>
+                        <th class="text-right py-3 px-4">LLM Cost</th>
+                        <th class="text-right py-3 px-4">Infra Cost</th>
+                        <th class="text-right py-3 px-4">Total/Unit</th>
+                        <th class="text-right py-3 px-4">ROI</th>
+                    </tr>
+                </thead>
+                <tbody class="text-slate-300">
+                    <tr class="border-b border-slate-700/50">
+                        <td class="py-3 px-4">🤖 Customer Support</td>
+                        <td class="text-right py-3 px-4">300K tickets</td>
+                        <td class="text-right py-3 px-4">$4,200</td>
+                        <td class="text-right py-3 px-4">$1,800</td>
+                        <td class="text-right py-3 px-4 text-green-400">$0.02</td>
+                        <td class="text-right py-3 px-4 text-primary-400">12x</td>
+                    </tr>
+                    <tr class="border-b border-slate-700/50">
+                        <td class="py-3 px-4">👨‍💻 Code Review</td>
+                        <td class="text-right py-3 px-4">1,500 PRs</td>
+                        <td class="text-right py-3 px-4">$1,800</td>
+                        <td class="text-right py-3 px-4">$450</td>
+                        <td class="text-right py-3 px-4 text-green-400">$1.50</td>
+                        <td class="text-right py-3 px-4 text-primary-400">8x</td>
+                    </tr>
+                    <tr class="border-b border-slate-700/50">
+                        <td class="py-3 px-4">📚 Knowledge Base</td>
+                        <td class="text-right py-3 px-4">50K queries</td>
+                        <td class="text-right py-3 px-4">$2,500</td>
+                        <td class="text-right py-3 px-4">$800</td>
+                        <td class="text-right py-3 px-4 text-green-400">$0.07</td>
+                        <td class="text-right py-3 px-4 text-primary-400">15x</td>
+                    </tr>
+                    <tr>
+                        <td class="py-3 px-4">📄 Doc Processing</td>
+                        <td class="text-right py-3 px-4">150K docs</td>
+                        <td class="text-right py-3 px-4">$18,000</td>
+                        <td class="text-right py-3 px-4">$4,500</td>
+                        <td class="text-right py-3 px-4 text-green-400">$0.15</td>
+                        <td class="text-right py-3 px-4 text-primary-400">6x</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <p class="text-slate-400 text-sm mt-4">* ROI calculated against previous manual/outsourced costs. Infrastructure includes vector DB, compute, and monitoring.</p>
+    </div>
+    
+    <!-- Common Patterns Section -->
+    <div class="bg-slate-800 rounded-xl border border-slate-700 p-8">
+        <h2 class="text-2xl font-bold mb-6">🔑 Common Success Patterns</h2>
+        
+        <div class="grid md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+                <h3 class="font-semibold text-lg text-green-400">✅ What Worked</h3>
+                <ul class="space-y-3 text-slate-300">
+                    <li class="flex items-start gap-2">
+                        <span class="text-green-400 mt-1">•</span>
+                        <span><strong>Hybrid retrieval</strong> (dense + sparse) consistently outperformed single methods by 15-20%</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-green-400 mt-1">•</span>
+                        <span><strong>Human-in-the-loop</strong> for edge cases maintained quality while maximizing automation</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-green-400 mt-1">•</span>
+                        <span><strong>Structured outputs</strong> with validation reduced downstream errors by 90%</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-green-400 mt-1">•</span>
+                        <span><strong>Incremental rollout</strong> with A/B testing identified issues early</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="space-y-4">
+                <h3 class="font-semibold text-lg text-red-400">❌ What Didn't Work</h3>
+                <ul class="space-y-3 text-slate-300">
+                    <li class="flex items-start gap-2">
+                        <span class="text-red-400 mt-1">•</span>
+                        <span><strong>Over-relying on prompting</strong> for complex logic—needed code for reliability</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-red-400 mt-1">•</span>
+                        <span><strong>Large chunk sizes</strong> (>1000 tokens) hurt retrieval precision</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-red-400 mt-1">•</span>
+                        <span><strong>Single-agent for multi-step tasks</strong>—multi-agent was more maintainable</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-red-400 mt-1">•</span>
+                        <span><strong>Skipping evaluation frameworks</strong>—made debugging issues nearly impossible</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

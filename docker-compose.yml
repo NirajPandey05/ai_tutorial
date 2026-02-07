@@ -1,0 +1,79 @@
+# AI Engineering Tutorial - Docker Compose
+# Complete development environment with optional Ollama
+
+services:
+  # Main application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-tutorial
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_ENV=production
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - XAI_API_KEY=${XAI_API_KEY:-}
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      # Mount content for live updates (development)
+      - ./content:/app/content:ro
+    depends_on:
+      ollama:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - ai-tutorial-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Ollama for local model hosting
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ai-tutorial-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    environment:
+      - OLLAMA_ORIGINS=*
+    restart: unless-stopped
+    networks:
+      - ai-tutorial-network
+    # GPU support (uncomment for NVIDIA GPUs)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # Development database (optional, for future features)
+  # postgres:
+  #   image: postgres:16-alpine
+  #   container_name: ai-tutorial-db
+  #   environment:
+  #     POSTGRES_USER: tutorial
+  #     POSTGRES_PASSWORD: tutorial_dev
+  #     POSTGRES_DB: ai_tutorial
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+  #   networks:
+  #     - ai-tutorial-network
+
+networks:
+  ai-tutorial-network:
+    driver: bridge
+
+volumes:
+  ollama-data:
+  # postgres-data:

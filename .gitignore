@@ -1,0 +1,46 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+# Optional environment files (do NOT commit secrets)
+.env
+.env.*
+
+# Editor directories and project files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Test / tooling
+.pytest_cache/
+.tox/
+.nox/
+.mypy_cache/
+.cache/
+.coverage
+coverage.xml
+
+# Distribution / packaging
+pip-wheel-metadata/
+*.egg
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs and temp
+*.log
+*.tmp
+
+# SQLite
+*.sqlite3
+
+# Node
+node_modules/
