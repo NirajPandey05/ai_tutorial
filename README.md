@@ -177,6 +177,47 @@ docker-compose up -d
 docker-compose logs -f
 ```
 
+## ☁️ Production Deployment
+
+### Deploy to Fly.io (Recommended)
+
+**Fastest way to deploy - takes ~5 minutes:**
+
+```bash
+# Install Flyctl
+# Windows:
+iwr https://fly.io/install.ps1 -useb | iex
+
+# macOS/Linux:
+curl -L https://fly.io/install.sh | sh
+
+# Authenticate
+flyctl auth login
+
+# Setup and deploy (Windows)
+pwsh scripts/deploy-flyio.ps1 setup
+pwsh scripts/deploy-flyio.ps1 deploy
+
+# Setup and deploy (macOS/Linux)
+bash scripts/deploy-flyio.sh setup
+bash scripts/deploy-flyio.sh deploy
+```
+
+**Cost:** ~$5-15/month with auto-scaling to zero when idle.
+
+📚 **Full guide:** [QUICKSTART_FLYIO.md](QUICKSTART_FLYIO.md) | [DEPLOYMENT.md](docs/DEPLOYMENT.md)
+
+### Other Platforms
+
+The project includes Docker support and can be deployed to:
+- **Railway.app** - One-click from GitHub
+- **Render.com** - $7/month web service tier
+- **Google Cloud Run** - Serverless, pay-per-request
+- **AWS Fargate** - Production scale
+- **Azure Container Instances** - Enterprise-ready
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for platform-specific guides.
+
 ## 📖 API Documentation
 
 When running, API documentation is available at:

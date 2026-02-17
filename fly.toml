@@ -1,0 +1,64 @@
+# fly.toml app configuration file generated for ai-tutorial on 2026-02-17T13:02:15-05:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'ai-tutorial'
+primary_region = 'iad'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[env]
+  APP_ENV = 'production'
+  BASE_URL = 'https://ai-tutorial.fly.dev'
+  CACHE_TTL_SECONDS = '3600'
+  CHROMA_PERSIST_DIRECTORY = './chroma_db'
+  DATABASE_URL = 'sqlite:///./ai_tutorial.db'
+  DEBUG = 'false'
+  ENABLE_RESPONSE_CACHE = 'true'
+  HOST = '0.0.0.0'
+  PORT = '8080'
+
+[[mounts]]
+  source = 'ai_tutorial_data'
+  destination = '/app/data'
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 8080
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[services.ports]]
+    port = 80
+    handlers = ['http']
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ['http', 'tls']
+
+  [services.concurrency]
+    type = 'requests'
+    hard_limit = 250
+    soft_limit = 200
+
+  [[services.http_checks]]
+    interval = '30s'
+    timeout = '10s'
+    grace_period = '10s'
+    method = 'GET'
+    path = '/health'
+    protocol = 'http'
+    tls_skip_verify = false
+
+[[vm]]
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 256
+
+[[metrics]]
+  port = 8080
+  path = '/health'
